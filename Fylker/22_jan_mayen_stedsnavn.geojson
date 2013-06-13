@@ -1,0 +1,13 @@
+{
+"type": "FeatureCollection",
+"features": [
+{ "type": "Feature", "properties": { "skr_snskrstat": "I", "enh_ssr_id": 1211086, "for_kartid": "303            ", "for_regdato": 20101011, "skr_sndato": 19000101, "enh_snmynd": "SK             ", "for_sist_endret_dt": 20111013, "enh_snspraak": "NO", "nty_gruppenr": 4, "enh_snavn": "Jan Mayen", "enh_komm": 2211, "enh_ssrobj_id": 2759913, "enh_sntystat": "H", "enh_navntype": 84, "for_snavn": "Jan Mayen", "kom_fylkesnr": 22, "kpr_tekst": "Overseil.kart 1:600' - 10 Mill" }, "geometry": { "type": "Point", "coordinates": [ -8.554111, 70.975306 ] } }
+,
+{ "type": "Feature", "properties": { "skr_snskrstat": "I", "enh_ssr_id": 1246592, "for_kartid": "303            ", "for_regdato": 20101012, "skr_sndato": 19760101, "enh_snmynd": "SK             ", "for_sist_endret_dt": 20101012, "enh_snspraak": "NO", "nty_gruppenr": 4, "enh_snavn": "Sørkapp", "enh_komm": 2211, "enh_ssrobj_id": 2794130, "enh_sntystat": "H", "enh_navntype": 87, "for_snavn": "Sørkapp", "kom_fylkesnr": 22, "kpr_tekst": "Overseil.kart 1:600' - 10 Mill" }, "geometry": { "type": "Point", "coordinates": [ -8.998319, 70.840794 ] } }
+,
+{ "type": "Feature", "properties": { "skr_snskrstat": "I", "enh_ssr_id": 1246593, "for_kartid": "303            ", "for_regdato": 20101012, "skr_sndato": 19760101, "enh_snmynd": "SK             ", "for_sist_endret_dt": 20101012, "enh_snspraak": "NO", "nty_gruppenr": 4, "enh_snavn": "Nordkapp", "enh_komm": 2211, "enh_ssrobj_id": 2794131, "enh_sntystat": "H", "enh_navntype": 87, "for_snavn": "Nordkapp", "kom_fylkesnr": 22, "kpr_tekst": "Overseil.kart 1:600' - 10 Mill" }, "geometry": { "type": "Point", "coordinates": [ -7.968514, 71.146867 ] } }
+,
+{ "type": "Feature", "properties": { "skr_snskrstat": "I", "enh_ssr_id": 1246594, "for_kartid": "               ", "for_regdato": 20101012, "skr_sndato": 19760101, "enh_snmynd": "SK             ", "for_sist_endret_dt": 20111205, "enh_snspraak": "NO", "nty_gruppenr": 1, "enh_snavn": "Beerenberg", "enh_komm": 2211, "enh_ssrobj_id": 2794132, "enh_sntystat": "H", "enh_navntype": 314, "for_snavn": "Beerenberg", "kom_fylkesnr": 22, "kpr_tekst": "Uspesifisert                  " }, "geometry": { "type": "Point", "coordinates": [ -8.169692, 71.085906 ] } }
+
+]
+}

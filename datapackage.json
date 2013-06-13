@@ -1,0 +1,198 @@
+{
+  "datapackages_info": "http://www.dataprotocols.org/en/latest/data-packages.html", 
+  "datapackages_version": "1.0beta2", 
+  "description": "Sentralt stadnamnregister (SSR) er Noregs offisielle register over stadnamn i offentleg bruk.", 
+  "keywords": [
+    "ssr", 
+    "stedsnavn", 
+    "place name", 
+    "kartverket", 
+    "norge", 
+    "norway"
+  ], 
+  "last_updated": "2013-06-13T04:18:23.036489", 
+  "licenses": [
+    {
+      "id": "cc-by", 
+      "url": "http://kartverket.no/Kart/Kartverksted/Lisens/"
+    }
+  ], 
+  "name": "no.kartverket.data.ssr", 
+  "resources": [
+    {
+      "fileformat": "geojson", 
+      "hash": "10d6ec7b4647a313f855c09fdc254bc9", 
+      "lastmodified": "2013-06-13T04:15:12", 
+      "mimetype": "application/json", 
+      "path": "./stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "zip", 
+      "hash": "1eec1e8f3dc485f1014f149c8b29bd66", 
+      "lastmodified": "2013-06-13T04:15:05", 
+      "mimetype": "application/zip", 
+      "path": "./stedsnavn.geojson.zip"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "7af2e096d50625a4d53a0e4a1e63b2b6", 
+      "lastmodified": "2013-06-13T04:17:31", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/01_\u00f8stfold_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "29e36cd2706c53af0c3c6bd4d2d9a97a", 
+      "lastmodified": "2013-06-13T04:17:32", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/02_akershus_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "d5ad56340cdc76a191358f8644fdbf88", 
+      "lastmodified": "2013-06-13T04:17:32", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/03_oslo_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "00e383860395202978fb22b1d72afa60", 
+      "lastmodified": "2013-06-13T04:17:32", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/04_hedmark_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "8da9a8a2a1cf88b77b92104f495beba5", 
+      "lastmodified": "2013-06-13T04:17:32", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/05_oppland_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "1663b021e1fb12a0fdf10c76ef2c495c", 
+      "lastmodified": "2013-06-13T04:17:32", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/06_buskerud_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "61c60b49fda9376fcc9abec34f46909b", 
+      "lastmodified": "2013-06-13T04:17:33", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/07_vestfold_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "014ac159a922fcfd148dc39c2337d394", 
+      "lastmodified": "2013-06-13T04:17:33", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/08_telemark_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "d7b3958c541bff0d480e8c71cbe4a9a2", 
+      "lastmodified": "2013-06-13T04:17:33", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/09_aust-agder_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "d6fc9110387c337e1e3a534ffa55948e", 
+      "lastmodified": "2013-06-13T04:17:34", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/10_vest-agder_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "283804d67dcb35089402f93da905e9a9", 
+      "lastmodified": "2013-06-13T04:17:34", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/11_rogaland_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "f4662c467502a1b29d7dd15f1f0e8107", 
+      "lastmodified": "2013-06-13T04:17:34", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/12_hordaland_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "bcca06466ab10a0cfe25d689ca4219fa", 
+      "lastmodified": "2013-06-13T04:17:35", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/14_sogn_og_fjordane_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "8a9683f7d4cd1e5d7a9099e48ace776b", 
+      "lastmodified": "2013-06-13T04:17:35", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/15_m\u00f8re_og_romsdal_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "74fe183c1cb5698bd397082b9328e5aa", 
+      "lastmodified": "2013-06-13T04:17:35", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/16_s\u00f8r-trondelag_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "9c9a2eca0d568e70c1623b9c975d2f95", 
+      "lastmodified": "2013-06-13T04:17:36", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/17_nord-trondelag_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "6ae0481a7541668ef9743eaa229c9726", 
+      "lastmodified": "2013-06-13T04:17:36", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/18_nordland_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "e2cbdf2ceacbe3f79b021615622f5ca7", 
+      "lastmodified": "2013-06-13T04:17:37", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/19_troms_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "041d7007fa4734104b2c2152b43e85ee", 
+      "lastmodified": "2013-06-13T04:17:37", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/20_finnmark_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "e9ebade0555bc11c14428d32f2a1f01e", 
+      "lastmodified": "2013-06-13T04:17:37", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/21_svalbard_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "fd0f8a0105ad37df3ddc3018c0788c92", 
+      "lastmodified": "2013-06-13T04:17:37", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/22_jan_mayen_stedsnavn.geojson"
+    }, 
+    {
+      "fileformat": "geojson", 
+      "hash": "6f79eab4899e49883fd0ae011ab08ee9", 
+      "lastmodified": "2013-06-13T04:17:37", 
+      "mimetype": "application/json", 
+      "path": "./Fylker/90_utland_stedsnavn.geojson"
+    }
+  ], 
+  "sources": [
+    {
+      "name": "Kartverket", 
+      "web": "http://kartverket.no"
+    }
+  ], 
+  "title": "Sentralt Stedsnavnsregister"
+}
