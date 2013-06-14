@@ -59,15 +59,17 @@ def upgrade(feature):
     except:
       pass
      
-  # github style hints
+  # github/mapbox style hints
   if props["found"]:
-    props["marker-color"] = "#228822"
+    props["marker-color"] = "#082"
   elif props.get("bestmatch", None):
     leven = compset["bestmatch"]["levenshtein"]
     red   = int((0.999-leven) * 10) # 0 and 1 should never happen
     green = int(leven * 10)
-    rgb   = "#%s%s%s%s22" % (red, red, green, green)
+    rgb   = "#%s%s2" % (red, green)
     props["marker-color"] = rgb
+  else:
+    props["marker-color"] = "#802" 
 
 
 
