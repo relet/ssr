@@ -61,12 +61,12 @@ def upgrade(feature):
      
   # github style hints
   if props["found"]:
-    props["marker-color"] = "#282"
+    props["marker-color"] = "#228822"
   elif props.get("bestmatch", None):
     leven = compset["bestmatch"]["levenshtein"]
     red   = int((0.999-leven) * 10) # 0 and 1 should never happen
     green = int(leven * 10)
-    rgb   = "#%s%s2" % (red, green)
+    rgb   = "#%s%s%s%s22" % (red, red, green, green)
     props["marker-color"] = rgb
 
 
