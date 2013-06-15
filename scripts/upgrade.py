@@ -44,7 +44,8 @@ def upgrade(feature):
   compset  = compdata[str(ssrid)]
 
   for key in props.keys():
-    props[replace[key]] = props[key]
+    if props.get(replace[key],None):
+      props[replace[key]] = props[key]
     del props[key] 
 
   for key in compset.keys():
