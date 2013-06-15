@@ -56,6 +56,7 @@ def upgrade(feature):
     props[key] = compset[key]
     
   props["ssrname"] = ssrname
+  props["ssrid"]   = ssrid
   if props["found"]:
     try:
       del props["bestmatch"]
