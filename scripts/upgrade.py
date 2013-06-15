@@ -41,6 +41,7 @@ replace = {
 def upgrade(feature):
   props    = feature['properties']
   ssrid    = props['enh_ssr_id']
+  ssrname  = props['enh_snavn']
   compset  = compdata[str(ssrid)]
 
   for key in props.keys():
@@ -54,6 +55,7 @@ def upgrade(feature):
     #    continue
     props[key] = compset[key]
     
+  props["ssrname"] = ssrname
   if props["found"]:
     try:
       del props["bestmatch"]
