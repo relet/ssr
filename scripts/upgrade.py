@@ -75,7 +75,7 @@ def upgrade(feature):
 
   # github/mapbox style hints
   if props["found"]:
-    props["marker-color"] = "#082"
+    props["marker-color"] = "#4d4"
   elif props.get("bestmatch", None):
     leven = compset["bestmatch"]["levenshtein"]
     red   = int((0.999-leven) * 10) # 0 and 1 should never happen
