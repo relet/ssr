@@ -59,7 +59,18 @@ def upgrade(feature):
       del props["bestmatch"]
     except:
       pass
-     
+    # flatten results to make them displayable
+    nodes = props["nodes"]
+    node  = reduce(lambda x,y:x["distance"] < y["distance"] and x or y, nodes)
+    osmid = node["osmid"]
+    props["osmid"] = osmid
+    del props["nodes"]
+  elif props.get("bestmatch",None):
+    # flatten results to make them displayable
+    props["levenshtein"] = props["bestmatch"]["levenshtein"]
+    props["osmname"]     = props["bestmatch"]["osmname"]
+    props["bestmatch"]   = props["bestmatch"]["osmid"]
+
   # github/mapbox style hints
   if props["found"]:
     props["marker-color"] = "#082"
