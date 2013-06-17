@@ -22,6 +22,7 @@ NAME_Q  ="[name=%s]"
 # parameters = name urlencoded, lon, lat, lon, lat
 TOL = TOLERANCE = 0.005 # degrees of search in area
 OSM_URL  = "http://www.openstreetmap.org/?lat=%.4f&lon=%.4f&zoom=14&layers=M"
+EDIT_URL = "http://www.openstreetmap.org/edit?editor=id&lat=%.4f&lon=%.4f&zoom=17"
 NK_URL   = "http://beta.norgeskart.no/?sok=%.4f,%.4f#14/%.4f/%.4f"
 NODE_URL = "http://www.openstreetmap.org/?node=%s" 
 
@@ -31,18 +32,26 @@ navntype    = json.loads(open("navntype.json","r","utf-8").read())
 credentials = json.loads(open("credentials.json","r","utf-8").read())
 
 osmtypes    = {
-  6:  "natural=peak",
+  6:  "natural=peak",   # massif?
+  16: "natural=valley", # only way and area!
+  37: "waterway=river", # bekk
   83: "natural=bay",
+  104:"place=farm",     # grend
+  108:"place=farm",     # bruk
+  110:"building=cabin", # fritidsbolig, area!
 }
 
 skrstat = {
   "G": "Godkjent",
+  "V": "Vedtak",
+  "A": "Avslått",
 }
 tystat = {
   "H": "hovednavn",
 }
 langcode = {
-  "NO": "nb",
+  "NO": "no",
+  "SN": "se",
 }
 
 self, fin, fout = sys.argv
@@ -58,8 +67,8 @@ def identify(feature):
   forname  = feature['properties']['for_snavn']
 
   if sname != forname:
-    print sname,"!=",forname,"!!!111"
-    sys.exit(1)
+    print sname,"!=",forname,"!!!111", "avslått?",  skrstat[feature['properties']['skr_snskrstat']]
+    return
 
   ssrid    = feature['properties']['enh_ssr_id']
 
@@ -111,6 +120,7 @@ def identify(feature):
     lang = langcode[feature['properties']['enh_snspraak']]
     print
     print "Please check: ", OSM_URL % (lat,lon)
+    print "Please check: ", EDIT_URL % (lat,lon)
     print "Please check: ", NK_URL % (lat, lon, lat, lon)
 
     # course of action:
@@ -123,15 +133,17 @@ def identify(feature):
 
     print
     print "CHOOSE WISELY:"
-    print "[I]gnore"
+    print "[I]gnore or E[x]it"
     if osmtype:
       print "[a]dd openstreetmap node of type %s" % osmtype
-    print "add [n]ote" 
+      print "add [n]ote" 
     print 
 
     userin = sys.stdin.readline()
 
-    if userin in ["a\n", "A\n"]:
+    if userin in ["x\n", "X\n"]:
+      sys.exit(0)
+    elif userin in ["a\n", "A\n"]:
       r = requests.get(API + "/api/0.6/permissions", auth = (username, password))   
       perms  = tree.fromstring(r.text.encode('utf-8'),tree.XMLParser(encoding='utf-8'))
       if not perms.findall(".//permission[@name='allow_write_api']"):
@@ -185,7 +197,7 @@ def identify(feature):
       
       r = requests.put(API + "/api/0.6/changeset/#%s/close" % csid, auth = (username, password))   
 
-map(identify, features[1:3])
+map(identify, features[8:20])
 
 #fd = open(fout, "w")
 #fd.write(json.dumps(status))
