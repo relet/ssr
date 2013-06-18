@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python26
 # -*- coding: utf-8 -*-
 
 """
@@ -11,9 +11,11 @@ import simplejson as json
 import sys
 import requests
 from   codecs import        open, getreader
+#try:
 from   lxml import etree as tree
+#except:
+#  import xml.etree.cElementTree as tree
 from   urllib import        urlopen, quote_plus 
-from   Levenshtein import   ratio
 from   math import          sqrt
 
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
@@ -32,13 +34,15 @@ navntype    = json.loads(open("navntype.json","r","utf-8").read())
 credentials = json.loads(open("credentials.json","r","utf-8").read())
 
 osmtypes    = {
-  6:  "natural=peak",   # massif?
-  16: "natural=valley", # only way and area!
-  37: "waterway=river", # bekk
-  83: "natural=bay",
-  104:"place=farm",     # grend
-  108:"place=farm",     # bruk
-  110:"building=cabin", # fritidsbolig, area!
+  6:  ("node", "natural=peak"),   # kollen - massif?
+  16: ("way" , "natural=valley"), # dal - only way and area!
+  31: ("area", "natural=water"),  # vann
+  37: ("way" , "waterway=river"), # bekk
+  83: ("node", "natural=bay"),    # vik
+  87: ("node", "natural=cape"),   # nes
+  104:("node", "place=farm"),     # grend
+  108:("node", "place=farm"),     # bruk
+  110:("area", "building=cabin"), # fritidsbolig, area!
 }
 
 skrstat = {
@@ -75,11 +79,13 @@ def identify(feature):
   XTOL = TOL * 100
   queryByName = (XAPI_URL + NAME_Q) % (lon-XTOL, lat-XTOL, lon+XTOL, lat+XTOL, quote_plus(sname.encode('utf-8')))
   queryWoName = (XAPI_URL) % (lon-TOL, lat-TOL, lon+TOL, lat+TOL)
-  osm = tree.parse(queryWoName)
+  osm = tree.fromstring(requests.get(queryWoName).text)
+  #names = osm.findall(".//tag")
   names = osm.findall(".//tag[@k='name']")
     
   if len(names) == 0:
-    osm = tree.parse(queryByName)
+    osm = tree.fromstring(requests.get(queryByName).text)
+    #names = osm.findall(".//tag")
     names = osm.findall(".//tag[@k='name']")
 
   status[ssrid] = {}
@@ -87,6 +93,8 @@ def identify(feature):
   bestratio = 0
 
   for name in names:
+    if not name.get('k') == 'name':
+      continue
     osmname = unicode(name.get('v'))
     osmid   = name.getparent().get('id')
     osmlon  = name.getparent().get('lon') # only works for nodes, or we'll a) have to fetch references b) find a better distance calculation
@@ -104,8 +112,13 @@ def identify(feature):
         status[ssrid]['found']=True
         status[ssrid]['nodes']=[{"osmid":osmid, "distance":distance}]
         print "IDENTIFIED", osmname
-        #print "Please check: ", OSM_URL % (float(osmlat), float(osmlon))
-        #print "Please check: ", NK_URL % (lat, lon, lat, lon)
+        source = name.getparent().get('source')
+        link   = name.getparent().get('source_id')
+        if source == "Kartverket" and link:
+          print "linked to ssr"
+        else:
+          print "not linked to ssr. TODO: display edit/update options"
+          print "ID Editor: ", EDIT_URL % (osmlat,osmlon)
     else:
       delta = max( ratio(osmname, sname), ratio(osmname, forname) )
       if delta > bestratio:
@@ -127,15 +140,17 @@ def identify(feature):
     # - ignore
     # - add to openstreetmap as node of type [see lookup table for places that make sense as node]
     # - add note (sic) to openstreetmap at this position, if it does not yet exist
+    # - edit an existing area, way or node
 
-    osmtype = osmtypes.get(int(typ), None)
+    geomtype, osmtype = osmtypes.get(int(typ), (None,None))
     username, password = credentials
 
     print
     print "CHOOSE WISELY:"
     print "[I]gnore or E[x]it"
     if osmtype:
-      print "[a]dd openstreetmap node of type %s" % osmtype
+      print "[a]dd openstreetmap %s (stub) of type %s" % (geomtype,osmtype)
+      print "add [m]etadata to an existing %s in this area" % (geomtype)
       print "add [n]ote" 
     print 
 
@@ -147,6 +162,7 @@ def identify(feature):
       r = requests.get(API + "/api/0.6/permissions", auth = (username, password))   
       perms  = tree.fromstring(r.text.encode('utf-8'),tree.XMLParser(encoding='utf-8'))
       if not perms.findall(".//permission[@name='allow_write_api']"):
+      #if not perms.findall(".//permission"):
         print "Permission denied."
         print tree.tostring(perms)
         sys.exit(1)
@@ -194,6 +210,8 @@ def identify(feature):
       oid = r.text
       
       print "Created element", NODE_URL % oid
+      if geomtype != "node":
+        print "Please EDIT IMMEDIATELY: ", EDIT_URL % (lat, lon)
       
       r = requests.put(API + "/api/0.6/changeset/#%s/close" % csid, auth = (username, password))   
 
