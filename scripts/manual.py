@@ -1,4 +1,4 @@
-#!/usr/bin/env python26
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -22,17 +22,18 @@ try:
 except:
   pass
 import OsmApi
+import chardet
 
 
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
-XAPI_URL="http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
-NAME_Q  ="[name=%s]"
+XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
+NAME_Q   =u"[name=%s]"
 # parameters = name urlencoded, lon, lat, lon, lat
 TOL = TOLERANCE = 0.005 # degrees of search in area
-OSM_URL  = "http://www.openstreetmap.org/?lat=%.4f&lon=%.4f&zoom=14&layers=M"
-EDIT_URL = "http://www.openstreetmap.org/edit?editor=id&lat=%.4f&lon=%.4f&zoom=17"
-NK_URL   = "http://beta.norgeskart.no/?sok=%.4f,%.4f#14/%.4f/%.4f"
-NODE_URL = "http://www.openstreetmap.org/?node=%s" 
+OSM_URL  = u"http://www.openstreetmap.org/?lat=%.4f&lon=%.4f&zoom=14&layers=M"
+EDIT_URL = u"http://www.openstreetmap.org/edit?editor=id&lat=%.4f&lon=%.4f&zoom=17"
+NK_URL   = u"http://beta.norgeskart.no/?sok=%.4f,%.4f#14/%.4f/%.4f"
+NODE_URL = u"http://www.openstreetmap.org/?node=%s" 
 PDIST    = 0.0005 # when creating a way or area stub, use this distance between points (should be tiny, but manageable)
 
 navntype    = json.loads(open("navntype.json","r","utf-8").read())
@@ -44,11 +45,25 @@ api = OsmApi.OsmApi(username=username, password=password, api="api.openstreetmap
 osmtypes    = {
   1:  ("node", "natural=peak"),   # berg - massif?
   2:  ("node", "natural=peak"),   # fjell - massif?
+  3:  ("node", "natural=massif"), # fjellområde
+  4:  ("area", "landuse=farm"),   # hei
+  5:  ("node", "natural=peak"),   # høyde
   6:  ("node", "natural=peak"),   # kollen - massif?
+  7:  ("node", "natural=ridge"),  # rygg
   8:  ("node", "natural=peak"),   # haug - mound?
+  9:  ("node", "natural=mountainside"), # bakke - imaginary tag
   10: ("node", "natural=hillside"), # li - imaginary tag
-  16: ("way" , "natural=valley"), # dal - only way and area!
+  11: ("way", "natural=cliff"), # stup
+#  12: ("area", "natural=fell"), # vidde
+#  13: ("area", "natural=plain"), # slette
+#  13: ("area", "natural=forest"), # mo
+  15: ("way" , "natural=valley"), # dalføre (large valley)
+  16: ("way" , "natural=valley"), # dal 
   17: ("node" , "natural=valley"), # botn - the end of a valley
+  18: ("way" , "natural=valley"), # skar - a slight canyon, cut
+  19: ("way" , "natural=valley"), # juv - an actual canyon
+  20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
+#  21: ("node" , "natural=..."), # stein, findling
   31: ("area", "natural=water"),  # vann
   32: ("area", "natural=water"),  # tjern
   35: ("node", "natural=bay"),    # vik
@@ -61,12 +76,18 @@ osmtypes    = {
   85: ("area", "place=island"),   # holme
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
-  90: ("area", "natural=skerry"), # skjæ
+  89: ("node", "natural=beach"),  # strand
+  90: ("area", "natural=skerry"), # skjær
+  92: ("area", "natural=shoal"),  # grunne
+  103:("node", "place=neighbourhood"),     # bygdelag
   104:("node", "place=farm"),     # grend
   108:("node", "place=farm"),     # bruk
   109:("area", "building=house"), # enebolig
   110:("area", "building=cabin"), # fritidsbolig, area!
+  112:("area", "building=barn"), # bygg for jordbruk
+  130:("node", "man_made=lighthouse"), # lykt
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
+  211:("node", "natural=peak"),   # topp
   216:("relation", "place=island"), # øppe
   218:("node", "landuse=quarry"),  # grustak/steinbrudd
   221:("area", "landuse=harbour"), # havn
@@ -75,16 +96,26 @@ osmtypes    = {
 skrstat = {
   "G": "Godkjent",
   "V": "Vedtak",
-  "A": "Avslått",
+  "S": "Samlevedtak",
+  "A": "AVSLÅTT!",
+  "F": "FORSLAG!",
+  "K": "Vedtak påklaget",
+  "U": "UVURDERT",
+  "P": "PRIVAT",
+  "I": "Internasjonalt",
+  "H": "HISTORISK",
 }
 tystat = {
   "H": "hovednavn",
+  "S": "SIDENAVN",
+  "U": "UNDERNAVN",
 }
 langcode = {
   "NO": "no",
   "FI": "fi",
   "SN": "se",
   "SS": "sma",
+  "SL": "smj",
 }
 
 self, fin = sys.argv
@@ -107,7 +138,8 @@ def identify(feature):
   XTOL = TOL * 100
   queryByName = (XAPI_URL + NAME_Q) % (lon-XTOL, lat-XTOL, lon+XTOL, lat+XTOL, quote_plus(sname.encode('utf-8')))
   queryWoName = (XAPI_URL) % (lon-TOL, lat-TOL, lon+TOL, lat+TOL)
-  osm = tree.fromstring(requests.get(queryWoName).text.encode('utf-8'))
+  r = requests.get(queryWoName) # can someone tell me why the f### encoding fails so badly?
+  osm = tree.fromstring(r.text.encode('utf-8'))
   names = osm.findall(".//tag")
   #names = osm.findall(".//tag[@k='name']")
     
@@ -140,6 +172,7 @@ def identify(feature):
       distance = sqrt(dx*dx+dy*dy) # GIS people are allowed to simplify like this
     else:
       distance = float("inf")
+    print sname, osmname, forname
     if sname == osmname or forname == osmname:
       if status[ssrid]['found']: # multiple matches
         status[ssrid]['nodes'].append({"osmid":osmid, "distance":distance})
@@ -279,7 +312,7 @@ def identify(feature):
 
 
 #map(identify, features[:])
-map(identify, features[50:])
+map(identify, features[90:])
 
 #fd = open(fout, "w")
 #fd.write(json.dumps(status))
