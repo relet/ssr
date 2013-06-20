@@ -33,6 +33,7 @@ OSM_URL  = "http://www.openstreetmap.org/?lat=%.4f&lon=%.4f&zoom=14&layers=M"
 EDIT_URL = "http://www.openstreetmap.org/edit?editor=id&lat=%.4f&lon=%.4f&zoom=17"
 NK_URL   = "http://beta.norgeskart.no/?sok=%.4f,%.4f#14/%.4f/%.4f"
 NODE_URL = "http://www.openstreetmap.org/?node=%s" 
+PDIST    = 0.0005 # when creating a way or area stub, use this distance between points (should be tiny, but manageable)
 
 navntype    = json.loads(open("navntype.json","r","utf-8").read())
 credentials = json.loads(open("credentials.json","r","utf-8").read())
@@ -41,6 +42,8 @@ username, password = credentials
 api = OsmApi.OsmApi(username=username, password=password, api="api.openstreetmap.org")
 
 osmtypes    = {
+  1:  ("node", "natural=peak"),   # berg - massif?
+  2:  ("node", "natural=peak"),   # fjell - massif?
   6:  ("node", "natural=peak"),   # kollen - massif?
   8:  ("node", "natural=peak"),   # haug - mound?
   10: ("node", "natural=hillside"), # li - imaginary tag
@@ -51,18 +54,22 @@ osmtypes    = {
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river"), # elv
   37: ("way" , "waterway=river"), # bekk
+  39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
   61: ("area", "natural=wetland"),   # myr + wetland=marsh
   84: ("node", "natural=strait"), # sund
   85: ("area", "place=island"),   # holme
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
+  90: ("area", "natural=skerry"), # skjæ
   104:("node", "place=farm"),     # grend
   108:("node", "place=farm"),     # bruk
   109:("area", "building=house"), # enebolig
   110:("area", "building=cabin"), # fritidsbolig, area!
+  207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   216:("relation", "place=island"), # øppe
-  218:("node", "landuse=quarry"), # grustak/steinbrudd
+  218:("node", "landuse=quarry"),  # grustak/steinbrudd
+  221:("area", "landuse=harbour"), # havn
 }
 
 skrstat = {
@@ -75,6 +82,7 @@ tystat = {
 }
 langcode = {
   "NO": "no",
+  "FI": "fi",
   "SN": "se",
   "SS": "sma",
 }
@@ -200,7 +208,11 @@ def identify(feature):
       #  print tree.tostring(perms)
       #  sys.exit(1)
 
-      typekey, typeval = osmtype.split("=")
+      typekeys = osmtype.split(";")
+      typetags = {}
+      for key in typekeys:
+        k,v = key.split("=")
+        typetags[k]=v      
 
       comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
       csid    = api.ChangesetCreate({
@@ -210,26 +222,64 @@ def identify(feature):
 
       print "Creating changeset id #", csid
 
-      if geomtype == "node":
-        node = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%lon,
-          "tag":{ 
+      tagdict = dict({ 
             "name":sname,
             "name:%s" % lang: sname,
             "official_name":sname,
             "source":"Kartverket",
             "source_id":unicode(ssrid),
             "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
-            typekey: typeval,
-        }})
+          }, **typetags)
+
+      if   geomtype == "area":
+        n1   = api.NodeCreate({
+          "lat":"%.6f"%lat,
+          "lon":"%.6f"%(lon-PDIST),
+        })
+        n2   = api.NodeCreate({
+          "lat":"%.6f"%lat,
+          "lon":"%.6f"%(lon+PDIST),
+        })
+        n3   = api.NodeCreate({
+          "lat":"%.6f"%(lat-PDIST),
+          "lon":"%.6f"%(lon),
+        })
+        way = api.WayCreate({
+          "nd":[n1["id"], n2["id"], n3["id"], n1["id"]],
+          "tag":dict({"area":"yes"},**tagdict),
+        })
+        
+        
+      
+      elif   geomtype == "way":
+        n1   = api.NodeCreate({
+          "lat":"%.6f"%lat,
+          "lon":"%.6f"%(lon-PDIST),
+        })
+        n2   = api.NodeCreate({
+          "lat":"%.6f"%lat,
+          "lon":"%.6f"%(lon+PDIST),
+        })
+        way = api.WayCreate({
+          "nd":[n1["id"], n2["id"]],
+          "tag":tagdict,
+        })
+        
+        
+      elif geomtype == "node":
+        node = api.NodeCreate({
+          "lat":"%.6f"%lat,
+          "lon":"%.6f"%lon,
+          "tag":tagdict,
+        })
 
         print "Created element", NODE_URL % node["id"]
 
       api.ChangesetClose()
 
 
-map(identify, features[:20])
+#map(identify, features[:])
+map(identify, features[50:])
 
 #fd = open(fout, "w")
 #fd.write(json.dumps(status))
