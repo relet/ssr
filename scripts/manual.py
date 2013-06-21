@@ -61,14 +61,16 @@ osmtypes    = {
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
 #  21: ("node" , "natural=..."), # stein, findling
   31: ("area", "natural=water"),  # vann
-  32: ("area", "natural=water"),  # tjern
+  32: ("area", "natural=water;water=pond"),  # tjern
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river"), # elv
-  37: ("way" , "waterway=river"), # bekk
+  37: ("node" , "waterway=river"), # bekk
+  43: ("node", "natural=bay"),  # lon - bay in a river
   39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
+  80: ("node", "natural=fjord"),   #fjord
   61: ("area", "natural=wetland"),   # myr + wetland=marsh
-  84: ("node", "natural=strait"), # sund
+  84: ("area", "place=island"),   # ø sjø 
   85: ("area", "place=island"),   # holme
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
@@ -81,12 +83,14 @@ osmtypes    = {
   109:("area", "building=house"), # enebolig
   110:("area", "building=cabin"), # fritidsbolig, area!
   112:("area", "building=barn"), # bygg for jordbruk
+  129:("node", "man_made=lighthouse"), # fyr
   130:("node", "man_made=lighthouse"), # lykt
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   211:("node", "natural=peak"),   # topp
   216:("relation", "place=island"), # øppe
   218:("node", "landuse=quarry"),  # grustak/steinbrudd
   221:("area", "landuse=harbour"), # havn
+  261:("relation", "natural=water"),  # gruppe av vann
 }
 
 skrstat = {
@@ -132,6 +136,7 @@ def identify(feature):
   ssrid    = feature['properties']['enh_ssr_id']
 
   XTOL = TOL * 100
+  # we could probably use api.Map here
   queryByName = (XAPI_URL + NAME_Q) % (lon-XTOL, lat-XTOL, lon+XTOL, lat+XTOL, quote_plus(sname.encode('utf-8')))
   queryWoName = (XAPI_URL) % (lon-TOL, lat-TOL, lon+TOL, lat+TOL)
   r = requests.get(queryWoName) # can someone tell me why the f### encoding fails so badly?
@@ -168,7 +173,6 @@ def identify(feature):
       distance = sqrt(dx*dx+dy*dy) # GIS people are allowed to simplify like this
     else:
       distance = float("inf")
-    print sname, osmname, forname
     if sname == osmname or forname == osmname:
       if status[ssrid]['found']: # multiple matches
         status[ssrid]['nodes'].append({"osmid":osmid, "distance":distance})
@@ -224,32 +228,14 @@ def identify(feature):
       print "add [n]ote" 
     print 
 
-    userin = sys.stdin.readline()
+    userin = sys.stdin.readline().strip()
 
-    if userin in ["x\n", "X\n"]:
-      sys.exit(0)
-    elif userin in ["a\n", "A\n"]:
-      #r = requests.get(API + "/api/0.6/permissions", auth = (username, password))   
-      #perms  = tree.fromstring(r.text)#.encode('utf-8'),tree.XMLParser(encoding='utf-8'))
-      ##if not perms.findall(".//permission[@name='allow_write_api']"):
-      #if not perms.findall(".//permission"):
-      #  print "Permission denied."
-      #  print tree.tostring(perms)
-      #  sys.exit(1)
-
+    if osmtype:
       typekeys = osmtype.split(";")
       typetags = {}
       for key in typekeys:
         k,v = key.split("=")
         typetags[k]=v      
-
-      comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
-      csid    = api.ChangesetCreate({
-          "comment":comment,
-          "created_by":"ssr-api alpha",
-      })
-
-      print "Creating changeset id #", csid
 
       tagdict = dict({ 
             "name":sname,
@@ -259,6 +245,78 @@ def identify(feature):
             "source_id":unicode(ssrid),
             "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
           }, **typetags)
+
+    if userin in ["x", "X"]:
+      sys.exit(0)
+    elif userin in ["m", "M"]:
+      print
+      print "enter geometry to edit [format \"node|way|relation 123456]\":"
+      userin = sys.stdin.readline().strip()
+
+      typ, id = userin.split(" ")
+      if typ == "node":      
+        node = api.NodeGet(id)
+        tags = node['tag']
+      elif typ == "way":
+        way = api.WayGet(id)
+        tags = way['tag']
+      elif typ == "relation":
+        rel = api.RelationGet(id)
+        print rel
+        tags = rel['tag']
+
+      print "BEFORE:"
+      for tag in tags.keys():
+        print " ",tag,"\t=",tags[tag]
+
+      for tag in tagdict: # being friendly and appending data
+        if tags.get(tag) == tagdict[tag]:
+          continue
+        elif tags.get(tag):
+          tags[tag]=tags[tag]+";"+tagdict[tag]
+        else: 
+          tags[tag]=tagdict[tag]
+
+      print "AFTER:"
+      for tag in tags.keys():
+        print " ",tag,"\t=",tags[tag]
+
+      print "Please confirm with capital Y"
+      userin = sys.stdin.readline().strip()
+
+      if userin == "Y":
+        comment = "Updating single element with metadata from the central place name register of Norway (SSR): %s" % sname
+        csid    = api.ChangesetCreate({
+           "comment":comment,
+           "created_by":"ssr-api alpha",
+        })
+
+        if typ == "node":
+          node['tag'] = tags
+          node['changeset'] = csid
+          api.NodeUpdate(node)
+          api.ChangesetClose()
+        elif typ == "way":
+          way['tag'] = tags
+          way['changeset'] = csid
+          api.WayUpdate(way)
+          api.ChangesetClose()
+        elif typ == "relation":
+          rel['tag'] = tags
+          rel['changeset'] = csid
+          api.RelationUpdate(rel)
+          api.ChangesetClose()
+  
+    elif userin in ["a", "A"]:
+
+      comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
+      csid    = api.ChangesetCreate({
+          "comment":comment,
+          "created_by":"ssr-api alpha",
+      })
+
+      print "Creating changeset id #", csid
+
 
       if   geomtype == "area":
         n1   = api.NodeCreate({
@@ -307,11 +365,7 @@ def identify(feature):
       api.ChangesetClose()
 
 
-#map(identify, features[:])
-map(identify, features[90:])
+map(identify, features[:]) # skipto Kvalvika 83
 
-#fd = open(fout, "w")
-#fd.write(json.dumps(status))
-#fd.close()
 
 
