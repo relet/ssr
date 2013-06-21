@@ -4,6 +4,8 @@
 """
 A simple script to compare the features in an SSR file with the OpenStreetMap XAPI.
 The results are presented to the user, eventually providing edit/update capabalities.
+
+TODO: cleanup - this has become beautiful soup
 """
 
 import geojson
@@ -61,36 +63,60 @@ osmtypes    = {
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
 #  21: ("node" , "natural=..."), # stein, findling
   31: ("area", "natural=water"),  # vann
-  32: ("area", "natural=water;water=pond"),  # tjern
+  32: ("area", "natural=water;water=lake"),  # tjern
+  33:("way", "waterway=dam"), # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river"), # elv
-  37: ("node" , "waterway=river"), # bekk
+  37: ("way" , "waterway=river"), # bekk
+  38: ("way" , "waterway=drain"), # grøft
+  39: ("way" , "waterway=waterfall"), # foss
+  40: ("way" , "waterway=rapids"), # stryk
+  42: ("node", "natural=pool"),  # høl, a pool under a waterfall
   43: ("node", "natural=bay"),  # lon - bay in a river
+  45: ("area", "place=islet"),   # holme
   39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
   80: ("node", "natural=fjord"),   #fjord
   61: ("area", "natural=wetland"),   # myr + wetland=marsh
-  84: ("area", "place=island"),   # ø sjø 
-  85: ("area", "place=island"),   # holme
+  71: ("node", "place=farm"),     # setervoll
+  82: ("node", "natural=strait"),   # sund
+  84: ("area", "place=island"),   # øy i sjø 
+  85: ("area", "place=islet"),   # holme i sjø
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
   89: ("node", "natural=beach"),  # strand
   90: ("area", "natural=skerry"), # skjær
   92: ("area", "natural=shoal"),  # grunne
+  100:("node", "place=town"),     # by
+  101:("node", "place=village"),  # tettsted
+  102:("node", "place=hamlet"),  # tettbebyggelse
   103:("node", "place=neighbourhood"),     # bygdelag
   104:("node", "place=farm"),     # grend
+  105:("node", "place=neighbourhood"),     # boligfelt
+  106:("node", "place=neighbourhood"),     # borettslag
   108:("node", "place=farm"),     # bruk
   109:("area", "building=house"), # enebolig
   110:("area", "building=cabin"), # fritidsbolig, area!
+  111:("node", "place=farm"),     # seter
   112:("area", "building=barn"), # bygg for jordbruk
+  115:("area", "building=industrial"), # verksted
   129:("node", "man_made=lighthouse"), # fyr
   130:("node", "man_made=lighthouse"), # lykt
+  132:("node", "place=district"),     # bydel
+  140:("way", "highway=residential"),     # veg
+  142:("way", "highway=track"),     # traktorveg
+  143:("way", "highway=path"),     # sti
+  146:("way", "bridge=yes"),     # bru
+  201:("way", "waterway=dam"), # dam
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   211:("node", "natural=peak"),   # topp
+  213:("node", "place=locality"),   # terrengdetalj
   216:("relation", "place=island"), # øppe
   218:("node", "landuse=quarry"),  # grustak/steinbrudd
   221:("area", "landuse=harbour"), # havn
+  225:("node", "place=locality"),   # annen kulturdetalj
   261:("relation", "natural=water"),  # gruppe av vann
+  280:("node", "place=farm"),     # gard
 }
 
 skrstat = {
@@ -152,6 +178,7 @@ def identify(feature):
   status[ssrid] = {}
   status[ssrid]['found']=False
   bestratio = 0
+  suggested = None
 
   for name in names:
     if not name.get('k') == 'name':
@@ -177,10 +204,22 @@ def identify(feature):
       if status[ssrid]['found']: # multiple matches
         status[ssrid]['nodes'].append({"osmid":osmid, "distance":distance})
       else:
-        status[ssrid]['found']=True
         status[ssrid]['nodes']=[{"osmid":osmid, "distance":distance}]
-        print "IDENTIFIED", osmname
-
+        print "IDENTIFIED", osmname, osmid
+        typ = parent.tag
+        if typ=="way":
+          elem  = api.WayGet(osmid)
+        elif typ=="node":
+          elem  = api.NodeGet(osmid)
+        elif typ=="relation":
+          elem  = api.RelationGet(osmid)
+        link = elem['tag'].get('source_id',None)
+        if link:  
+          status[ssrid]['found']=True
+        else:
+          print "...but not linked to SSR"
+          suggested = (typ, osmid, elem['tag'].get('name',''))
+        
         #TODO: compare source and source_id tags 
         #if source == "Kartverket" and link:
         #  print "linked to ssr"
@@ -225,6 +264,8 @@ def identify(feature):
     if osmtype:
       print "[a]dd openstreetmap %s (stub) of type %s" % (geomtype,osmtype)
       print "add [m]etadata to an existing %s in this area" % (geomtype)
+      if suggested:
+        print "     ^ SUGGESTED! -> %s %s %s" % suggested
       print "add [n]ote" 
     print 
 
@@ -251,9 +292,15 @@ def identify(feature):
     elif userin in ["m", "M"]:
       print
       print "enter geometry to edit [format \"node|way|relation 123456]\":"
+      if suggested:
+        print "  ...or empty for suggestion: %s %s %s" % suggested
       userin = sys.stdin.readline().strip()
+     
+      if suggested and userin == "":
+        typ, id, nname = suggested
+      else:
+        typ, id = userin.split(" ")
 
-      typ, id = userin.split(" ")
       if typ == "node":      
         node = api.NodeGet(id)
         tags = node['tag']
@@ -364,8 +411,11 @@ def identify(feature):
 
       api.ChangesetClose()
 
+ffwd = 0
+#while features[ffwd]['properties']['enh_snavn'] != 'Solum':
+#  ffwd += 1
 
-map(identify, features[:]) # skipto Kvalvika 83
+map(identify, features[ffwd:]) # 
 
 
 
