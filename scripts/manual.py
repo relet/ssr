@@ -11,10 +11,7 @@ import simplejson as json
 import sys
 import requests
 from   codecs import        open, getreader
-try:
-  from   lxml import etree as tree
-except:
-  import xml.etree.cElementTree as tree
+from   lxml import etree as tree
 from   urllib import        urlopen, quote_plus 
 from   math import          sqrt
 try:
@@ -22,7 +19,6 @@ try:
 except:
   pass
 import OsmApi
-import chardet
 
 
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
@@ -139,12 +135,12 @@ def identify(feature):
   queryByName = (XAPI_URL + NAME_Q) % (lon-XTOL, lat-XTOL, lon+XTOL, lat+XTOL, quote_plus(sname.encode('utf-8')))
   queryWoName = (XAPI_URL) % (lon-TOL, lat-TOL, lon+TOL, lat+TOL)
   r = requests.get(queryWoName) # can someone tell me why the f### encoding fails so badly?
-  osm = tree.fromstring(r.text.encode('utf-8'))
+  osm = tree.fromstring(r.content)
   names = osm.findall(".//tag")
   #names = osm.findall(".//tag[@k='name']")
     
   if len(names) == 0:
-    osm = tree.fromstring(requests.get(queryByName).text.encode('utf-8'))
+    osm = tree.fromstring(requests.get(queryByName).content)
     names = osm.findall(".//tag")
     #names = osm.findall(".//tag[@k='name']")
 
