@@ -28,6 +28,7 @@ XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
 NAME_Q   =u"[name=%s]"
 # parameters = name urlencoded, lon, lat, lon, lat
 TOL = TOLERANCE = 0.005 # degrees of search in area
+TINY = MINTOLERANCE = 0.001 # finding exact local matches
 OSM_URL  = u"http://www.openstreetmap.org/?lat=%.4f&lon=%.4f&zoom=14&layers=M"
 EDIT_URL = u"http://www.openstreetmap.org/edit?editor=id&lat=%.4f&lon=%.4f&zoom=17"
 NK_URL   = u"http://beta.norgeskart.no/?sok=%.4f,%.4f#14/%.4f/%.4f"
@@ -73,6 +74,7 @@ osmtypes    = {
   40: ("way" , "waterway=rapids"), # stryk
   42: ("node", "natural=pool"),  # høl, a pool under a waterfall
   43: ("node", "natural=bay"),  # lon - bay in a river
+  44: ("area", "place=island"),  # ø
   45: ("area", "place=islet"),   # holme
   39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
@@ -108,6 +110,7 @@ osmtypes    = {
   143:("way", "highway=path"),     # sti
   146:("way", "bridge=yes"),     # bru
   201:("way", "waterway=dam"), # dam
+  204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   211:("node", "natural=peak"),   # topp
   213:("node", "place=locality"),   # terrengdetalj
@@ -236,15 +239,51 @@ def identify(feature):
       except:
         delta = 1
       if delta > bestratio:
-        status[ssrid]['bestmatch'] = {"osmname":osmname, "osmid":osmid, "levenshtein":delta}
+        status[ssrid]['bestmatch'] = {"osmname":osmname, "osmid":osmid, "levenshtein":delta, "type":parent.tag}
         bestratio = delta
   if not status[ssrid]['found']:
-    print "------------------------------------------------------------------------------"
-    print "Not found:", sname, "Best match:", str(status[ssrid].get('bestmatch',"None"))
     typ = unicode(feature['properties']['enh_navntype'])
+    geomtype, osmtype = osmtypes.get(int(typ), (None,None))
+    lang = langcode[feature['properties']['enh_snspraak']]
+
+    bestmatch  =  str(status[ssrid].get('bestmatch',"None"))
+    exactmatch = None
+ 
+    if osmtype:
+      typekeys = osmtype.split(";")
+      typetags = {}
+      for key in typekeys:
+        k,v = key.split("=")
+        typetags[k]=v      
+
+      tagdict = dict({ 
+            "name":sname,
+            "name:%s" % lang: sname,
+            "official_name":sname,
+            "source:name":"Kartverket", 
+            "source_id":unicode(ssrid),
+            "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
+          }, **typetags)
+
+
+
+      exactmatches = api.Map(min_lon=lon-TINY,min_lat=lat-TINY,max_lon=lon+TINY,max_lat=lat+TINY)
+      for match in exactmatches:
+        mtyp = match['type']
+        if mtyp == geomtype or (mtyp == "way") and (geomtype=="area"):
+          mainkey, mainval = osmtype.split(";")[0].split("=")
+          if match['data']['tag'].get(mainkey,'---') == mainval:
+            exactmatch = "%s %s %s=%s" % (match['type'], match['data']['id'], mainkey, mainval)
+             
+
+
+    print "------------------------------------------------------------------------------"
+    print "Not found:", sname
+    if not suggested:
+      print "  Best match:",     bestmatch
+      print "  Location match:", exactmatch
     print "It's a ", navntype.get(typ, typ), "(number ",typ,")"
     print skrstat[feature['properties']['skr_snskrstat']], tystat [feature['properties']['enh_sntystat']]
-    lang = langcode[feature['properties']['enh_snspraak']]
     print
     print "Please check: ", OSM_URL % (lat,lon)
     print "Please check: ", EDIT_URL % (lat,lon)
@@ -256,7 +295,6 @@ def identify(feature):
     # - add note (sic) to openstreetmap at this position, if it does not yet exist
     # - edit an existing area, way or node
 
-    geomtype, osmtype = osmtypes.get(int(typ), (None,None))
 
     print
     print "CHOOSE WISELY:"
@@ -270,22 +308,6 @@ def identify(feature):
     print 
 
     userin = sys.stdin.readline().strip()
-
-    if osmtype:
-      typekeys = osmtype.split(";")
-      typetags = {}
-      for key in typekeys:
-        k,v = key.split("=")
-        typetags[k]=v      
-
-      tagdict = dict({ 
-            "name":sname,
-            "name:%s" % lang: sname,
-            "official_name":sname,
-            "source":"Kartverket",
-            "source_id":unicode(ssrid),
-            "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
-          }, **typetags)
 
     if userin in ["x", "X"]:
       sys.exit(0)
@@ -309,7 +331,6 @@ def identify(feature):
         tags = way['tag']
       elif typ == "relation":
         rel = api.RelationGet(id)
-        print rel
         tags = rel['tag']
 
       print "BEFORE:"
@@ -320,7 +341,10 @@ def identify(feature):
         if tags.get(tag) == tagdict[tag]:
           continue
         elif tags.get(tag):
-          tags[tag]=tags[tag]+";"+tagdict[tag]
+          if tag == "name": # replace name by default - TODO: be more careful in case another source is present
+            tags[tag]=tagdict[tag]
+          else:
+            tags[tag]=tags[tag]+";"+tagdict[tag]
         else: 
           tags[tag]=tagdict[tag]
 
@@ -335,6 +359,8 @@ def identify(feature):
         comment = "Updating single element with metadata from the central place name register of Norway (SSR): %s" % sname
         csid    = api.ChangesetCreate({
            "comment":comment,
+           "source:name":"Kartverket",
+           "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
            "created_by":"ssr-api alpha",
         })
 
@@ -359,6 +385,8 @@ def identify(feature):
       comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
       csid    = api.ChangesetCreate({
           "comment":comment,
+          "source:name":"Kartverket",
+          "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
           "created_by":"ssr-api alpha",
       })
 
@@ -412,8 +440,8 @@ def identify(feature):
       api.ChangesetClose()
 
 ffwd = 0
-#while features[ffwd]['properties']['enh_snavn'] != 'Solum':
-#  ffwd += 1
+while features[ffwd]['properties']['enh_snavn'] != 'Gravningen':
+  ffwd += 1
 
 map(identify, features[ffwd:]) # 
 
