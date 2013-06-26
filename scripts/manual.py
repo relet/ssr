@@ -55,7 +55,7 @@ osmtypes    = {
   11: ("way", "natural=cliff"), # stup
 #  12: ("area", "natural=fell"), # vidde
 #  13: ("area", "natural=plain"), # slette
-#  13: ("area", "natural=forest"), # mo
+#  14: ("area", "natural=forest"), # mo
   15: ("way" , "natural=valley"), # dalføre (large valley)
   16: ("way" , "natural=valley"), # dal 
   17: ("node" , "natural=valley"), # botn - the end of a valley
@@ -68,11 +68,11 @@ osmtypes    = {
   33:("way", "waterway=dam"), # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river"), # elv
-  37: ("way" , "waterway=river"), # bekk
+  37: ("way" , "waterway=stream"), # bekk
   38: ("way" , "waterway=drain"), # grøft
   39: ("way" , "waterway=waterfall"), # foss
   40: ("way" , "waterway=rapids"), # stryk
-  42: ("node", "natural=pool"),  # høl, a pool under a waterfall
+  42: ("node", "natural=water;water=pool"),  # høl, a pool under a waterfall
   43: ("node", "natural=bay"),  # lon - bay in a river
   44: ("area", "place=island"),  # ø
   45: ("area", "place=islet"),   # holme
@@ -101,7 +101,20 @@ osmtypes    = {
   110:("area", "building=cabin"), # fritidsbolig, area!
   111:("node", "place=farm"),     # seter
   112:("area", "building=barn"), # bygg for jordbruk
+  113:("area", "building=industrial"), # fabrikk
   115:("area", "building=industrial"), # verksted
+  116:("area", "building=commercial"), # forretning
+  117:("area", "building=hotel;tourism=hotel"), # hotell
+  118:("area", "building=hotel;tourism=guest_house"), # pensjonat
+  119:("area", "tourism=alpine_hut"), # turisthytte 
+  120:("area", "building=school"), # skole
+  121:("area", "building=hospital"), # sykehus
+  122:("area", "building=civic;amenity=nursing_home"), # helseinstitusjon/aldershjem
+  123:("area", "building=church;amenity=place_of_worship"), # kirke
+  125:("area", "building=civic;amenity=community_centre"), # forsamlingshus/kulturhus
+  126:("area", "building=civic"), # vaktstasjon 
+  127:("area", "building=military;landuse=military"), # militaer bygning
+  128:("area", "building=civic;amenity=sports_centre"), # sporthall
   129:("node", "man_made=lighthouse"), # fyr
   130:("node", "man_made=lighthouse"), # lykt
   132:("node", "place=district"),     # bydel
@@ -109,9 +122,12 @@ osmtypes    = {
   142:("way", "highway=track"),     # traktorveg
   143:("way", "highway=path"),     # sti
   146:("way", "bridge=yes"),     # bru
+  161:("node", "railway=station"),     # stasjon
+  162:("node", "railway=halt"),     # stoppeplass
   201:("way", "waterway=dam"), # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
+  208:("node", "tourism=attraction;place=locality"), # severdighet
   211:("node", "natural=peak"),   # topp
   213:("node", "place=locality"),   # terrengdetalj
   216:("relation", "place=island"), # øppe
@@ -440,8 +456,8 @@ def identify(feature):
       api.ChangesetClose()
 
 ffwd = 0
-while features[ffwd]['properties']['enh_snavn'] != 'Gravningen':
-  ffwd += 1
+#while features[ffwd]['properties']['enh_snavn'] != 'Sirikjerke':
+#  ffwd += 1
 
 map(identify, features[ffwd:]) # 
 
