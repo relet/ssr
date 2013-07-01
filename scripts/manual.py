@@ -63,7 +63,8 @@ osmtypes    = {
   19: ("way" , "natural=valley"), # juv - an actual canyon
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
 #  21: ("node" , "natural=..."), # stein, findling
-  31: ("area", "natural=water"),  # vann
+  30: ("area", "natural=water;water=lake"),  # innsjoe
+  31: ("area", "natural=water;water=lake"),  # vann
   32: ("area", "natural=water;water=lake"),  # tjern
   33:("way", "waterway=dam"), # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
@@ -80,6 +81,7 @@ osmtypes    = {
   47: ("node", "natural=cape"),   # nes
   80: ("node", "natural=fjord"),   #fjord
   61: ("area", "natural=wetland"),   # myr + wetland=marsh
+  62: ("area", "landuse=farm"),   # utmark
   71: ("node", "place=farm"),     # setervoll
   82: ("node", "natural=strait"),   # sund
   84: ("area", "place=island"),   # øy i sjø 
@@ -97,11 +99,12 @@ osmtypes    = {
   105:("node", "place=neighbourhood"),     # boligfelt
   106:("node", "place=neighbourhood"),     # borettslag
   108:("node", "place=farm"),     # bruk
-  109:("area", "building=house"), # enebolig
-  110:("area", "building=cabin"), # fritidsbolig, area!
+  109:("node", "building=house"), # enebolig
+  110:("node", "building=cabin"), # fritidsbolig, area!
   111:("node", "place=farm"),     # seter
   112:("area", "building=barn"), # bygg for jordbruk
   113:("area", "building=industrial"), # fabrikk
+  114:("area", "power=plant;building=industrial"), # kraftstasjon
   115:("area", "building=industrial"), # verksted
   116:("area", "building=commercial"), # forretning
   117:("area", "building=hotel;tourism=hotel"), # hotell
@@ -122,18 +125,22 @@ osmtypes    = {
   142:("way", "highway=track"),     # traktorveg
   143:("way", "highway=path"),     # sti
   146:("way", "bridge=yes"),     # bru
+  150:("node", "barrier=lift_gate"),     # vegbom
   161:("node", "railway=station"),     # stasjon
   162:("node", "railway=halt"),     # stoppeplass
+  190:("area", "leisure=sports_centre"),     #idrettsanlegg, may be leisure=pitch
   201:("way", "waterway=dam"), # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   208:("node", "tourism=attraction;place=locality"), # severdighet
+  209:("node", "tourism=viewpoint"), # utsiktspunkt
   211:("node", "natural=peak"),   # topp
   213:("node", "place=locality"),   # terrengdetalj
   216:("relation", "place=island"), # øppe
   218:("node", "landuse=quarry"),  # grustak/steinbrudd
   221:("area", "landuse=harbour"), # havn
   225:("node", "place=locality"),   # annen kulturdetalj
+  251:("node", "tourism=museum"),   # museum/bibliotek/galleri ~ amenity=arts_centre
   261:("relation", "natural=water"),  # gruppe av vann
   280:("node", "place=farm"),     # gard
 }
@@ -456,8 +463,10 @@ def identify(feature):
       api.ChangesetClose()
 
 ffwd = 0
-#while features[ffwd]['properties']['enh_snavn'] != 'Sirikjerke':
-#  ffwd += 1
+while features[ffwd]['properties']['enh_snavn'] != 'Damvanna':
+  ffwd += 1
+
+print "%.2f%% skipped." % (float(ffwd) / len(features))
 
 map(identify, features[ffwd:]) # 
 
