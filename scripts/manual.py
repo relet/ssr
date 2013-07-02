@@ -26,6 +26,7 @@ import OsmApi
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
 XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
 NAME_Q   =u"[name=%s]"
+NOTE_API =u"http://api.openstreetmap.org/api/0.6/notes"
 # parameters = name urlencoded, lon, lat, lon, lat
 TOL = TOLERANCE = 0.005 # degrees of search in area
 TINY = MINTOLERANCE = 0.001 # finding exact local matches
@@ -68,8 +69,8 @@ osmtypes    = {
   32: ("area", "natural=water;water=lake"),  # tjern
   33:("way", "waterway=dam"), # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
-  36: ("way" , "waterway=river"), # elv
-  37: ("way" , "waterway=stream"), # bekk
+  36: ("way" , "waterway=river;layer=-1"), # elv
+  37: ("way" , "waterway=stream;layer=-1"), # bekk
   38: ("way" , "waterway=drain"), # grøft
   39: ("way" , "waterway=waterfall"), # foss
   40: ("way" , "waterway=rapids"), # stryk
@@ -102,7 +103,7 @@ osmtypes    = {
   109:("node", "building=house"), # enebolig
   110:("node", "building=cabin"), # fritidsbolig, area!
   111:("node", "place=farm"),     # seter
-  112:("area", "building=barn"), # bygg for jordbruk
+  112:("node", "building=barn"), # bygg for jordbruk
   113:("area", "building=industrial"), # fabrikk
   114:("area", "power=plant;building=industrial"), # kraftstasjon
   115:("area", "building=industrial"), # verksted
@@ -128,7 +129,9 @@ osmtypes    = {
   150:("node", "barrier=lift_gate"),     # vegbom
   161:("node", "railway=station"),     # stasjon
   162:("node", "railway=halt"),     # stoppeplass
+  170:("node", "place=locality"),     # eiendom
   190:("area", "leisure=sports_centre"),     #idrettsanlegg, may be leisure=pitch
+  194:("way", "piste=downhill"),     #slalombakke
   201:("way", "waterway=dam"), # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
@@ -231,7 +234,7 @@ def identify(feature):
         status[ssrid]['nodes'].append({"osmid":osmid, "distance":distance})
       else:
         status[ssrid]['nodes']=[{"osmid":osmid, "distance":distance}]
-        print "IDENTIFIED", osmname, osmid
+        print "IDENTIFIED", osmname, parent.tag, osmid
         typ = parent.tag
         if typ=="way":
           elem  = api.WayGet(osmid)
@@ -246,16 +249,6 @@ def identify(feature):
           print "...but not linked to SSR"
           suggested = (typ, osmid, elem['tag'].get('name',''))
         
-        #TODO: compare source and source_id tags 
-        #if source == "Kartverket" and link:
-        #  print "linked to ssr"
-        #  if link == ssrid:
-        #    print "CORRECT!"
-        #  else:
-        #    print link, ssrid
-        #else:
-        #  print "not linked to ssr."# TODO: display edit/update options
-        #  print "ID Editor: ", EDIT_URL % (float(osmlat),float(osmlon))
     else:
       try:
         delta = max( ratio(osmname, sname), ratio(osmname, forname) ) # Levenshtein may not be available
@@ -266,7 +259,7 @@ def identify(feature):
         bestratio = delta
   if not status[ssrid]['found']:
     typ = unicode(feature['properties']['enh_navntype'])
-    geomtype, osmtype = osmtypes.get(int(typ), (None,None))
+    geomtype, osmtype = osmtypes.get(int(typ), ("node","place=locality"))
     lang = langcode[feature['properties']['enh_snspraak']]
 
     bestmatch  =  str(status[ssrid].get('bestmatch',"None"))
@@ -321,7 +314,7 @@ def identify(feature):
 
     print
     print "CHOOSE WISELY:"
-    print "[I]gnore or E[x]it"
+    print "[I]gnore, E[x]it or go [b]ack one element (not implemented)"
     if osmtype:
       print "[a]dd openstreetmap %s (stub) of type %s" % (geomtype,osmtype)
       print "add [m]etadata to an existing %s in this area" % (geomtype)
@@ -331,9 +324,32 @@ def identify(feature):
     print 
 
     userin = sys.stdin.readline().strip()
-
+      
     if userin in ["x", "X"]:
       sys.exit(0)
+    elif userin in ["n", "N"]:
+      NOTE_TEXT = """This place is a named place in the Norwegian place name register SSR.
+This note identifies a possible conflict with existing data. Please compare:
+http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s
+--- 
+Author comment: %s"""
+                    
+      print "Enter a reason for adding this note:"
+      note = sys.stdin.readline().strip()
+      note = NOTE_TEXT % (ssrid, note)
+      print "Should I add the following note?"
+      print
+      print note
+      print
+      print "Please confirm with capital Y"
+      confirm = sys.stdin.readline().strip()
+
+      if confirm == "Y":
+        params = {"lat":lat, "lon":lon, "text":note}
+        r = requests.post(NOTE_API, auth=(username, password), params=params)
+        print r
+      
+      pass
     elif userin in ["m", "M"]:
       print
       print "enter geometry to edit [format \"node|way|relation 123456]\":"
@@ -463,10 +479,10 @@ def identify(feature):
       api.ChangesetClose()
 
 ffwd = 0
-while features[ffwd]['properties']['enh_snavn'] != 'Damvanna':
-  ffwd += 1
+#while features[ffwd]['properties']['enh_snavn'] != 'Katthusdalen':
+#  ffwd += 1
 
-print "%.2f%% skipped." % (float(ffwd) / len(features))
+print "%.2f%% skipped." % (float(ffwd) / len(features) * 100)
 
 map(identify, features[ffwd:]) # 
 
