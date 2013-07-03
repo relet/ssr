@@ -74,7 +74,7 @@ osmtypes    = {
   38: ("way" , "waterway=drain"), # grøft
   39: ("way" , "waterway=waterfall"), # foss
   40: ("way" , "waterway=rapids"), # stryk
-  42: ("node", "natural=water;water=pool"),  # høl, a pool under a waterfall
+  42: ("area", "natural=water;water=pool"),  # høl, a pool under a waterfall
   43: ("node", "natural=bay"),  # lon - bay in a river
   44: ("area", "place=island"),  # ø
   45: ("area", "place=islet"),   # holme
@@ -87,6 +87,7 @@ osmtypes    = {
   82: ("node", "natural=strait"),   # sund
   84: ("area", "place=island"),   # øy i sjø 
   85: ("area", "place=islet"),   # holme i sjø
+  86: ("node", "natural=cape"),   # halvoey, preferred over natural=peninsula
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
   89: ("node", "natural=beach"),  # strand
@@ -113,20 +114,22 @@ osmtypes    = {
   119:("area", "tourism=alpine_hut"), # turisthytte 
   120:("area", "building=school"), # skole
   121:("area", "building=hospital"), # sykehus
-  122:("area", "building=civic;amenity=nursing_home"), # helseinstitusjon/aldershjem
+  122:("area", "amenity=nursing_home"), # helseinstitusjon/aldershjem
   123:("area", "building=church;amenity=place_of_worship"), # kirke
-  125:("area", "building=civic;amenity=community_centre"), # forsamlingshus/kulturhus
+  125:("area", "amenity=community_centre"), # forsamlingshus/kulturhus
   126:("area", "building=civic"), # vaktstasjon 
   127:("area", "building=military;landuse=military"), # militaer bygning
-  128:("area", "building=civic;amenity=sports_centre"), # sporthall
+  128:("area", "amenity=sports_centre"), # sporthall
   129:("node", "man_made=lighthouse"), # fyr
-  130:("node", "man_made=lighthouse"), # lykt
+  130:("node", "man_made=lighthouse"), # lykt, man_made=lighthouse may not always be correct
   132:("node", "place=district"),     # bydel
   140:("way", "highway=residential"),     # veg
   142:("way", "highway=track"),     # traktorveg
   143:("way", "highway=path"),     # sti
   146:("way", "bridge=yes"),     # bru
   150:("node", "barrier=lift_gate"),     # vegbom
+  154:("node", "man_made=pier"),     # kai
+  155:("node", "man_made=pier"),     # brygge
   161:("node", "railway=station"),     # stasjon
   162:("node", "railway=halt"),     # stoppeplass
   170:("node", "place=locality"),     # eiendom
@@ -173,7 +176,10 @@ langcode = {
   "SL": "smj",
 }
 
-self, fin = sys.argv
+if len(sys.argv) == 3:
+  self, fin, skipto = sys.argv
+else:
+  self, fin = sys.argv
 
 data = geojson.loads(open(fin,"r","utf-8").read())
 features = data['features']
@@ -479,8 +485,9 @@ Author comment: %s"""
       api.ChangesetClose()
 
 ffwd = 0
-#while features[ffwd]['properties']['enh_snavn'] != 'Katthusdalen':
-#  ffwd += 1
+if skipto is not None:
+  while features[ffwd]['properties']['enh_snavn'] != skipto:
+    ffwd += 1
 
 print "%.2f%% skipped." % (float(ffwd) / len(features) * 100)
 
