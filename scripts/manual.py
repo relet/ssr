@@ -112,7 +112,7 @@ osmtypes    = {
   116:("area", "building=commercial"), # forretning
   117:("area", "building=hotel;tourism=hotel"), # hotell
   118:("area", "building=hotel;tourism=guest_house"), # pensjonat
-  119:("area", "tourism=alpine_hut"), # turisthytte 
+  119:("node", "tourism=alpine_hut"), # turisthytte 
   120:("area", "building=school"), # skole
   121:("area", "building=hospital"), # sykehus
   122:("area", "amenity=nursing_home"), # helseinstitusjon/aldershjem
@@ -150,6 +150,8 @@ osmtypes    = {
   225:("node", "place=locality"),   # annen kulturdetalj
   251:("node", "tourism=museum"),   # museum/bibliotek/galleri ~ amenity=arts_centre
   261:("relation", "natural=water"),  # gruppe av vann
+  262:("relation", "natural=water;water=lake"),  # gruppe av tjern
+  267:("node", "amenity=restaurant"),   # serveringssted
   280:("node", "place=farm"),     # gard
 }
 
