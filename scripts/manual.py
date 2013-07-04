@@ -51,8 +51,8 @@ osmtypes    = {
   6:  ("node", "natural=peak"),   # kollen - massif?
   7:  ("node", "natural=ridge"),  # rygg
   8:  ("node", "natural=peak"),   # haug - mound?
-  9:  ("node", "natural=mountainside"), # bakke - imaginary tag
-  10: ("node", "natural=hillside"), # li - imaginary tag
+  9:  ("node", "natural=mountainside;place=locality"), # bakke - imaginary tag
+  10: ("node", "natural=hillside;place=locality"), # li - imaginary tag
   11: ("way", "natural=cliff"), # stup
 #  12: ("area", "natural=fell"), # vidde
 #  13: ("area", "natural=plain"), # slette
@@ -78,11 +78,12 @@ osmtypes    = {
   43: ("node", "natural=bay"),  # lon - bay in a river
   44: ("area", "place=island"),  # ø
   45: ("area", "place=islet"),   # holme
+  46: ("node", "natural=cape"),   # halvoey
   39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
   80: ("node", "natural=fjord"),   #fjord
-  61: ("area", "natural=wetland"),   # myr + wetland=marsh
-  62: ("area", "landuse=farm"),   # utmark
+  61: ("node", "place=locality;natural=wetland"),   # myr + wetland=marsh - add as locality for now
+  62: ("node", "place=locality;landuse=farm"),   # utmark - add as locality for now
   71: ("node", "place=farm"),     # setervoll
   82: ("node", "natural=strait"),   # sund
   84: ("area", "place=island"),   # øy i sjø 
@@ -137,6 +138,7 @@ osmtypes    = {
   194:("way", "piste=downhill"),     #slalombakke
   201:("way", "waterway=dam"), # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
+  206:("node", "historical=archaeological_site"), # gammel bosetningsplass
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   208:("node", "tourism=attraction;place=locality"), # severdighet
   209:("node", "tourism=viewpoint"), # utsiktspunkt
