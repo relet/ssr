@@ -47,7 +47,7 @@ osmtypes    = {
   1:  ("node", "natural=peak"),   # berg - massif?
   2:  ("node", "natural=peak"),   # fjell - massif?
   3:  ("node", "natural=massif"), # fjellområde
-  4:  ("area", "landuse=farm"),   # hei
+  4:  ("area", "natural=heath"),  # hei
   5:  ("node", "natural=peak"),   # høydee / hill?
   6:  ("node", "natural=peak"),   # kollen - massif?
   7:  ("node", "natural=ridge"),  # rygg
@@ -56,15 +56,15 @@ osmtypes    = {
   10: ("node", "natural=slope;place=locality"), # li 
   11: ("way" , "natural=cliff"),  # stup
 #  12: ("area", "natural=fell"),  # vidde 
-#  13: ("area", "natural=plain"), # slette
-#  14: ("area", "natural=forest"),# mo
+#  13: ("area", "natural=fell"), # slette
+#  14: ("area", "natural=wood"),# mo
   15: ("way" , "natural=valley"), # dalføre (large valley)
   16: ("way" , "natural=valley"), # dal 
   17: ("node", "natural=valley"), # botn - the end of a valley
   18: ("way" , "natural=valley"), # skar - a slight canyon, cut
   19: ("way" , "natural=valley"), # juv - an actual canyon
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
-#  21: ("node" , "natural=..."),  # stein, findling
+  21: ("node" , "natural=stone"),  # stein, findling
   30: ("area", "natural=water;water=lake"),  # innsjoe
   31: ("area", "natural=water;water=lake"),  # vann
   32: ("area", "natural=water;water=lake"),  # tjern
@@ -72,7 +72,7 @@ osmtypes    = {
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river;layer=-1"), # elv
   37: ("way" , "waterway=stream;layer=-1"), # bekk
-  38: ("way" , "waterway=drain"), # grøft
+  38: ("way" , "waterway=ditch"), # grøftt - drain?
   39: ("way" , "waterway=waterfall"), # foss
   40: ("way" , "waterway=rapids"),# stryk
   42: ("area", "natural=water;water=pool"),  # høl, a pool under a waterfall
@@ -106,11 +106,11 @@ osmtypes    = {
   109:("node", "building=house"), # enebolig
   110:("node", "building=cabin"), # fritidsbolig, area!
   111:("node", "place=farm"),     # seter
-  112:("node", "building=barn"),  # bygg for jordbruk
-  113:("area", "building=industrial"), # fabrikk
+  112:("node", "building=farm_auxiliary"),  # bygg for jordbruk
+  113:("area", "building=factory;man_made=works"), # fabrikk
   114:("area", "power=plant;building=industrial"), # kraftstasjon
   115:("area", "building=industrial"), # verksted
-  116:("area", "building=commercial"), # forretning
+  116:("area", "building=shop"), # forretning
   117:("area", "building=hotel;tourism=hotel"), # hotell
   118:("area", "building=hotel;tourism=guest_house"), # pensjonat
   119:("node", "tourism=alpine_hut"), # turisthytte 
@@ -121,7 +121,7 @@ osmtypes    = {
   125:("area", "amenity=community_centre"), # forsamlingshus/kulturhus
   126:("area", "building=civic"), # vaktstasjon 
   127:("area", "building=military;landuse=military"), # militaer bygning
-  128:("area", "amenity=sports_centre"), # sporthall
+  128:("area", "amenity=sports_centre;building=yes"), # sporthall
   129:("node", "man_made=lighthouse"),   # fyr
   130:("node", "man_made=lighthouse"),   # lykt, man_made=lighthouse may not always be correct
   132:("node", "place=district"),        # bydel
