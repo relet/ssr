@@ -42,52 +42,53 @@ username, password = credentials
 
 api = OsmApi.OsmApi(username=username, password=password, api="api.openstreetmap.org")
 
+# anything not mentioned defaults to place=locality
 osmtypes    = {
   1:  ("node", "natural=peak"),   # berg - massif?
   2:  ("node", "natural=peak"),   # fjell - massif?
   3:  ("node", "natural=massif"), # fjellområde
   4:  ("area", "landuse=farm"),   # hei
-  5:  ("node", "natural=peak"),   # høyde
+  5:  ("node", "natural=peak"),   # høydee / hill?
   6:  ("node", "natural=peak"),   # kollen - massif?
   7:  ("node", "natural=ridge"),  # rygg
-  8:  ("node", "natural=peak"),   # haug - mound?
-  9:  ("node", "natural=mountainside;place=locality"), # bakke - imaginary tag
-  10: ("node", "natural=hillside;place=locality"), # li - imaginary tag
-  11: ("way", "natural=cliff"), # stup
-#  12: ("area", "natural=fell"), # vidde
+  8:  ("node", "natural=peak"),   # haug - hill?
+  9:  ("node", "natural=slope;place=locality"), # bakke 
+  10: ("node", "natural=slope;place=locality"), # li 
+  11: ("way" , "natural=cliff"),  # stup
+#  12: ("area", "natural=fell"),  # vidde 
 #  13: ("area", "natural=plain"), # slette
-#  14: ("area", "natural=forest"), # mo
+#  14: ("area", "natural=forest"),# mo
   15: ("way" , "natural=valley"), # dalføre (large valley)
   16: ("way" , "natural=valley"), # dal 
-  17: ("node" , "natural=valley"), # botn - the end of a valley
+  17: ("node", "natural=valley"), # botn - the end of a valley
   18: ("way" , "natural=valley"), # skar - a slight canyon, cut
   19: ("way" , "natural=valley"), # juv - an actual canyon
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
-#  21: ("node" , "natural=..."), # stein, findling
+#  21: ("node" , "natural=..."),  # stein, findling
   30: ("area", "natural=water;water=lake"),  # innsjoe
   31: ("area", "natural=water;water=lake"),  # vann
   32: ("area", "natural=water;water=lake"),  # tjern
-  33:("way", "waterway=dam"), # pytt (tiny dam)
+  33: ("way" , "waterway=dam"),   # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river;layer=-1"), # elv
   37: ("way" , "waterway=stream;layer=-1"), # bekk
   38: ("way" , "waterway=drain"), # grøft
   39: ("way" , "waterway=waterfall"), # foss
-  40: ("way" , "waterway=rapids"), # stryk
+  40: ("way" , "waterway=rapids"),# stryk
   42: ("area", "natural=water;water=pool"),  # høl, a pool under a waterfall
-  43: ("node", "natural=bay"),  # lon - bay in a river
-  44: ("area", "place=island"),  # ø
-  45: ("area", "place=islet"),   # holme
+  43: ("node", "natural=bay"),    # lon - bay in a river
+  44: ("area", "place=island"),   # ø
+  45: ("area", "place=islet"),    # holme
   46: ("node", "natural=cape"),   # halvoey
-  39: ("node" , "natural=waterfall"), # foss, according to ongoing discussion
+  39: ("node", "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
-  80: ("node", "natural=fjord"),   #fjord
+  80: ("node", "natural=fjord"),  #fjord
   61: ("node", "place=locality;natural=wetland"),   # myr + wetland=marsh - add as locality for now
   62: ("node", "place=locality;landuse=farm"),   # utmark - add as locality for now
   71: ("node", "place=farm"),     # setervoll
-  82: ("node", "natural=strait"),   # sund
+  82: ("node", "natural=strait"), # sund
   84: ("area", "place=island"),   # øy i sjø 
-  85: ("area", "place=islet"),   # holme i sjø
+  85: ("area", "place=islet"),    # holme i sjø
   86: ("node", "natural=cape"),   # halvoey, preferred over natural=peninsula
   83: ("node", "natural=bay"),    # vik i sjø
   87: ("node", "natural=cape"),   # nes i sjø
@@ -96,7 +97,7 @@ osmtypes    = {
   92: ("area", "natural=shoal"),  # grunne
   100:("node", "place=town"),     # by
   101:("node", "place=village"),  # tettsted
-  102:("node", "place=hamlet"),  # tettbebyggelse
+  102:("node", "place=hamlet"),   # tettbebyggelse
   103:("node", "place=neighbourhood"),     # bygdelag
   104:("node", "place=farm"),     # grend
   105:("node", "place=neighbourhood"),     # boligfelt
@@ -105,7 +106,7 @@ osmtypes    = {
   109:("node", "building=house"), # enebolig
   110:("node", "building=cabin"), # fritidsbolig, area!
   111:("node", "place=farm"),     # seter
-  112:("node", "building=barn"), # bygg for jordbruk
+  112:("node", "building=barn"),  # bygg for jordbruk
   113:("area", "building=industrial"), # fabrikk
   114:("area", "power=plant;building=industrial"), # kraftstasjon
   115:("area", "building=industrial"), # verksted
@@ -113,7 +114,7 @@ osmtypes    = {
   117:("area", "building=hotel;tourism=hotel"), # hotell
   118:("area", "building=hotel;tourism=guest_house"), # pensjonat
   119:("node", "tourism=alpine_hut"), # turisthytte 
-  120:("area", "building=school"), # skole
+  120:("area", "building=school"),# skole
   121:("area", "building=hospital"), # sykehus
   122:("area", "amenity=nursing_home"), # helseinstitusjon/aldershjem
   123:("area", "building=church;amenity=place_of_worship"), # kirke
@@ -121,34 +122,34 @@ osmtypes    = {
   126:("area", "building=civic"), # vaktstasjon 
   127:("area", "building=military;landuse=military"), # militaer bygning
   128:("area", "amenity=sports_centre"), # sporthall
-  129:("node", "man_made=lighthouse"), # fyr
-  130:("node", "man_made=lighthouse"), # lykt, man_made=lighthouse may not always be correct
-  132:("node", "place=district"),     # bydel
-  140:("way", "highway=residential"),     # veg
-  142:("way", "highway=track"),     # traktorveg
-  143:("way", "highway=path"),     # sti
-  146:("way", "bridge=yes"),     # bru
-  150:("node", "barrier=lift_gate"),     # vegbom
-  154:("node", "man_made=pier"),     # kai
-  155:("node", "man_made=pier"),     # brygge
-  161:("node", "railway=station"),     # stasjon
-  162:("node", "railway=halt"),     # stoppeplass
-  170:("node", "place=locality"),     # eiendom
+  129:("node", "man_made=lighthouse"),   # fyr
+  130:("node", "man_made=lighthouse"),   # lykt, man_made=lighthouse may not always be correct
+  132:("node", "place=district"),        # bydel
+  140:("way", "highway=residential"),    # veg
+  142:("way", "highway=track"),   # traktorveg
+  143:("way", "highway=path"),    # sti
+  146:("way", "bridge=yes"),      # bru
+  150:("node", "barrier=lift_gate"), # vegbom
+  154:("node", "man_made=pier"),  # kai
+  155:("node", "man_made=pier"),  # brygge
+  161:("node", "railway=station"),# stasjon
+  162:("node", "railway=halt"),   # stoppeplass
+  170:("node", "place=locality"), # eiendom
   190:("area", "leisure=sports_centre"),     #idrettsanlegg, may be leisure=pitch
-  194:("way", "piste=downhill"),     #slalombakke
-  201:("way", "waterway=dam"), # dam
-  204:("way", "waterway=dam;note=artifical facility used for timber floating"), # dam
+  194:("way", "piste=downhill"),  #slalombakke
+  201:("way", "waterway=dam"),    # dam
+  204:("way", "waterway=dam;note=artifical facility used for timber floating"), # floetningsanlegg
   206:("node", "historical=archaeological_site"), # gammel bosetningsplass
   207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
   208:("node", "tourism=attraction;place=locality"), # severdighet
   209:("node", "tourism=viewpoint"), # utsiktspunkt
   211:("node", "natural=peak"),   # topp
-  213:("node", "place=locality"),   # terrengdetalj
+  213:("node", "place=locality"), # terrengdetalj
   216:("relation", "place=island"), # øppe
-  218:("node", "landuse=quarry"),  # grustak/steinbrudd
-  221:("area", "landuse=harbour"), # havn
-  225:("node", "place=locality"),   # annen kulturdetalj
-  251:("node", "tourism=museum"),   # museum/bibliotek/galleri ~ amenity=arts_centre
+  218:("node", "landuse=quarry"), # grustak/steinbrudd
+  221:("area", "landuse=harbour"),# havn
+  225:("node", "place=locality"), # annen kulturdetalj
+  251:("node", "tourism=museum"), # museum/bibliotek/galleri ~ amenity=arts_centre
   261:("relation", "natural=water"),  # gruppe av vann
   262:("relation", "natural=water;water=lake"),  # gruppe av tjern
   267:("node", "amenity=restaurant"),   # serveringssted
