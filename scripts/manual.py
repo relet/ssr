@@ -85,7 +85,7 @@ osmtypes    = {
   80: ("node", "natural=fjord"),  #fjord
   61: ("node", "place=locality;natural=wetland"),   # myr + wetland=marsh - add as locality for now
   62: ("node", "place=locality;landuse=farm"),   # utmark - add as locality for now
-  71: ("node", "place=farm"),     # setervoll
+  71: ("node", "place=croft"),     # setervoll
   82: ("node", "natural=strait"), # sund
   84: ("area", "place=island"),   # øy i sjø 
   85: ("area", "place=islet"),    # holme i sjø
@@ -139,8 +139,8 @@ osmtypes    = {
   194:("way", "piste=downhill"),  #slalombakke
   201:("way", "waterway=dam"),    # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # floetningsanlegg
-  206:("node", "historical=archaeological_site"), # gammel bosetningsplass
-  207:("node", "historical=archaeological_site;site_type=sacrificial_site"), # offersted
+  206:("node", "historic=archaeological_site"), # gammel bosetningsplass
+  207:("node", "historic=archaeological_site;site_type=sacrificial_site"), # offersted
   208:("node", "tourism=attraction;place=locality"), # severdighet
   209:("node", "tourism=viewpoint"), # utsiktspunkt
   211:("node", "natural=peak"),   # topp
