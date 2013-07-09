@@ -70,8 +70,8 @@ osmtypes    = {
   32: ("area", "natural=water;water=lake"),  # tjern
   33: ("way" , "waterway=dam"),   # pytt (tiny dam)
   35: ("node", "natural=bay"),    # vik
-  36: ("way" , "waterway=river;layer=-1"), # elv
-  37: ("way" , "waterway=stream;layer=-1"), # bekk
+  36: ("way" , "waterway=river"), # elv
+  37: ("way" , "waterway=stream"), # bekk
   38: ("way" , "waterway=ditch"), # grøftt - drain?
   39: ("way" , "waterway=waterfall"), # foss
   40: ("way" , "waterway=rapids"),# stryk
@@ -105,7 +105,7 @@ osmtypes    = {
   108:("node", "place=farm"),     # bruk
   109:("node", "building=house"), # enebolig
   110:("node", "building=cabin"), # fritidsbolig, area!
-  111:("node", "place=farm"),     # seter
+  111:("node", "place=croft"),     # seter
   112:("node", "building=farm_auxiliary"),  # bygg for jordbruk
   113:("area", "building=factory;man_made=works"), # fabrikk
   114:("area", "power=plant;building=industrial"), # kraftstasjon
@@ -149,6 +149,7 @@ osmtypes    = {
   218:("node", "landuse=quarry"), # grustak/steinbrudd
   221:("area", "landuse=harbour"),# havn
   225:("node", "place=locality"), # annen kulturdetalj
+  244:("node", "place=locality;natural=valley"), # senkning
   251:("node", "tourism=museum"), # museum/bibliotek/galleri ~ amenity=arts_centre
   261:("relation", "natural=water"),  # gruppe av vann
   262:("relation", "natural=water;water=lake"),  # gruppe av tjern
@@ -185,6 +186,7 @@ if len(sys.argv) == 3:
   self, fin, skipto = sys.argv
 else:
   self, fin = sys.argv
+  skipto = None
 
 data = geojson.loads(open(fin,"r","utf-8").read())
 features = data['features']
@@ -200,6 +202,7 @@ def identify(feature):
     return #usually avslatt
 
   ssrid    = feature['properties']['enh_ssr_id']
+  objid    = feature['properties']['enh_ssrobj_id']
 
   XTOL = TOL * 100
   # we could probably use api.Map here
@@ -215,8 +218,8 @@ def identify(feature):
     names = osm.findall(".//tag")
     #names = osm.findall(".//tag[@k='name']")
 
-  status[ssrid] = {}
-  status[ssrid]['found']=False
+  status[objid] = {}
+  status[objid]['found']=False
   bestratio = 0
   suggested = None
 
@@ -241,10 +244,10 @@ def identify(feature):
     else:
       distance = float("inf")
     if sname == osmname or forname == osmname:
-      if status[ssrid]['found']: # multiple matches
-        status[ssrid]['nodes'].append({"osmid":osmid, "distance":distance})
+      if status[objid]['found']: # multiple matches
+        status[objid]['nodes'].append({"osmid":osmid, "distance":distance})
       else:
-        status[ssrid]['nodes']=[{"osmid":osmid, "distance":distance}]
+        status[objid]['nodes']=[{"osmid":osmid, "distance":distance}]
         print "IDENTIFIED", osmname, parent.tag, osmid
         typ = parent.tag
         if typ=="way":
@@ -254,10 +257,15 @@ def identify(feature):
         elif typ=="relation":
           elem  = api.RelationGet(osmid)
         link = elem['tag'].get('source_id',None)
-        if link:  
-          status[ssrid]['found']=True
+        link2 = elem['tag'].get('no-kartverket-ssr:objid',None)
+        if link2 is not None:  
+          status[objid]['found']=True
         else:
-          print "...but not linked to SSR"
+          if link is not None:  
+            print "...with outdated metadata."
+
+          else:
+            print "...but not linked to SSR"
           suggested = (typ, osmid, elem['tag'].get('name',''))
         
     else:
@@ -266,14 +274,14 @@ def identify(feature):
       except:
         delta = 1
       if delta > bestratio:
-        status[ssrid]['bestmatch'] = {"osmname":osmname, "osmid":osmid, "levenshtein":delta, "type":parent.tag}
+        status[objid]['bestmatch'] = {"osmname":osmname, "osmid":osmid, "levenshtein":delta, "type":parent.tag}
         bestratio = delta
-  if not status[ssrid]['found']:
+  if not status[objid]['found']:
     typ = unicode(feature['properties']['enh_navntype'])
     geomtype, osmtype = osmtypes.get(int(typ), ("node","place=locality"))
     lang = langcode[feature['properties']['enh_snspraak']]
 
-    bestmatch  =  str(status[ssrid].get('bestmatch',"None"))
+    bestmatch  =  str(status[objid].get('bestmatch',"None"))
     exactmatch = None
  
     if osmtype:
@@ -283,13 +291,24 @@ def identify(feature):
         k,v = key.split("=")
         typetags[k]=v      
 
+      rmdict = dict({ # these will be removed (and replaced) if encountered
+            "official_name":sname,
+            #"name:%s" % lang: sname,
+            #"source":"Kartverket", # source:name is preferred, but it may be the source of the location as well
+            "source_id":unicode(ssrid), #using ssr namespace and objid instead
+            "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
+            # more broken tags by grekvard_import
+            "attribution":"alle stedsnavn er hentet fra SSR ©Kartverket", #
+            "source_ref":"http://data.kartverket.no/stedsnavn/",
+      })
       tagdict = dict({ 
             "name":sname,
             "name:%s" % lang: sname,
-            "official_name":sname,
+            #"official_name":sname,
             "source:name":"Kartverket", 
-            "source_id":unicode(ssrid),
-            "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
+            "no-kartverket-ssr:objid":unicode(objid),
+            "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
+            "no-kartverket-ssr:date":"2013-06-18", #TODO: fetch from metadata file
           }, **typetags)
 
 
@@ -387,10 +406,16 @@ Author comment: %s"""
       for tag in tags.keys():
         print " ",tag,"\t=",tags[tag]
 
+      for tag in rmdict:  # updating metadata from earlier versions
+        if tags.get(tag) is not None:
+          del tags[tag]
+      if tags.get("alt_name",None) is not None:
+        if tags.get("alt_name") == tags.get("name"):
+          del tags["alt_name"]
       for tag in tagdict: # being friendly and appending data
         if tags.get(tag) == tagdict[tag]:
           continue
-        elif tags.get(tag):
+        elif tags.get(tag) is not None:
           if tag == "name": # replace name by default - TODO: be more careful in case another source is present
             tags[tag]=tagdict[tag]
           else:
@@ -410,7 +435,7 @@ Author comment: %s"""
         csid    = api.ChangesetCreate({
            "comment":comment,
            "source:name":"Kartverket",
-           "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
+           "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
            "created_by":"ssr-api alpha",
         })
 
@@ -436,7 +461,7 @@ Author comment: %s"""
       csid    = api.ChangesetCreate({
           "comment":comment,
           "source:name":"Kartverket",
-          "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
+          "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
           "created_by":"ssr-api alpha",
       })
 
