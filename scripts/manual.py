@@ -22,6 +22,7 @@ except:
   pass
 import OsmApi
 
+UP_DATE="2013-06-18" #TODO: fetch automatically from SSR metadata
 
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
 XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
@@ -256,10 +257,13 @@ def identify(feature):
           elem  = api.NodeGet(osmid)
         elif typ=="relation":
           elem  = api.RelationGet(osmid)
-        link = elem['tag'].get('source_id',None)
+        link  = elem['tag'].get('source_id',None)
         link2 = elem['tag'].get('no-kartverket-ssr:objid',None)
+        date  = elem['tag'].get('no-kartverket-ssr:date',None)
         if link2 is not None:  
           status[objid]['found']=True
+          if date != UP_DATE:
+            print "...last updated %s" % date
         else:
           if link is not None:  
             print "...with outdated metadata."
@@ -293,7 +297,7 @@ def identify(feature):
 
       rmdict = dict({ # these will be removed (and replaced) if encountered
             "official_name":sname,
-            #"name:%s" % lang: sname,
+            "name:%s" % lang: sname, #not required if identical with sname!
             #"source":"Kartverket", # source:name is preferred, but it may be the source of the location as well
             "source_id":unicode(ssrid), #using ssr namespace and objid instead
             "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
@@ -301,14 +305,15 @@ def identify(feature):
             "attribution":"alle stedsnavn er hentet fra SSR ©Kartverket", #
             "source_ref":"http://data.kartverket.no/stedsnavn/",
       })
+
       tagdict = dict({ 
             "name":sname,
-            "name:%s" % lang: sname,
+            #"name:%s" % lang: sname,
             #"official_name":sname,
             "source:name":"Kartverket", 
             "no-kartverket-ssr:objid":unicode(objid),
             "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
-            "no-kartverket-ssr:date":"2013-06-18", #TODO: fetch from metadata file
+            "no-kartverket-ssr:date":UP_DATE, 
           }, **typetags)
 
 
