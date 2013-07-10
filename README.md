@@ -9,7 +9,7 @@ Source: http://data.kartverket.no
 Instead of a manual, which still has to be produced, here is an example interaction with the utility.
 
 <pre>
-[root@skrivte57 scripts]# ./manual.py ../Fylker/03_oslo_stedsnavn.geojson Skomakertjern
+[scripts]# ./manual.py ../Fylker/03_oslo_stedsnavn.geojson Skomakertjern
 0.37% skipped.
 IDENTIFIED Skomakertjern node 530826394
 ...but not linked to SSR
