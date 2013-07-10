@@ -22,8 +22,6 @@ except:
   pass
 import OsmApi
 
-UP_DATE="2013-06-18" #TODO: fetch automatically from SSR metadata
-
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
 XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
 NAME_Q   =u"[name=%s]"
@@ -249,6 +247,9 @@ langcode = {
   "SL": "smj",
 }
 
+# accept either one or two parameters, the second being a name to ffwd to. 
+# the first parameter is the ssr geojson filename to handle
+
 if len(sys.argv) == 3:
   self, fin, skipto = sys.argv
 else:
@@ -260,10 +261,13 @@ features = data['features']
 
 status = {} # dict:ssrid->{found, ...}
 
+# the method that handles each feature
 def identify(feature):
   lon, lat = map(float,feature['geometry']['coordinates'])
   sname    = feature['properties']['enh_snavn']
   forname  = feature['properties']['for_snavn']
+  ssrdate  = unicode(feature['properties']['for_sist_endret_dt'])
+  ssrdate  = "%s-%s-%s" % (ssrdate[:4], ssrdate[4:6], ssrdate[6:]) # convert 20130101 to 2013-01-01
 
   if sname != forname:
     return #usually avslatt
@@ -271,6 +275,7 @@ def identify(feature):
   ssrid    = feature['properties']['enh_ssr_id']
   objid    = feature['properties']['enh_ssrobj_id']
 
+  # get all features with the correct name in an area of (lon,lat)+-100 * TOLERANCE
   XTOL = TOL * 100
   # we could probably use api.Map here
   queryByName = (XAPI_URL + NAME_Q) % (lon-XTOL, lat-XTOL, lon+XTOL, lat+XTOL, quote_plus(sname.encode('utf-8')))
@@ -280,6 +285,7 @@ def identify(feature):
   names = osm.findall(".//tag")
   #names = osm.findall(".//tag[@k='name']")
     
+  # if no names present, try getting all features in that area
   if len(names) == 0:
     osm = tree.fromstring(requests.get(queryByName).content)
     names = osm.findall(".//tag")
@@ -290,6 +296,7 @@ def identify(feature):
   bestratio = 0
   suggested = None
 
+  # compare each named osm element with the ssr element
   for name in names:
     if not name.get('k') == 'name':
       continue
@@ -298,11 +305,12 @@ def identify(feature):
     except:
       parent_map = dict((c, p) for p in osm.getiterator() for c in p)
       parent = parent_map[name] 
+
+    # exctract osm tags and values
     osmname = unicode(name.get('v'))
     osmid   = parent.get('id')
     osmlon  = parent.get('lon') # only works for nodes, or we'll a) have to fetch references b) find a better distance calculation
     osmlat  = parent.get('lat')
-    #TODO: extract all "tag" elements from parent
     
     if osmlon:
       dx = float(osmlon)-lon
@@ -310,6 +318,8 @@ def identify(feature):
       distance = sqrt(dx*dx+dy*dy) # GIS people are allowed to simplify like this
     else:
       distance = float("inf")
+
+    # if we have a name match
     if sname == osmname or forname == osmname:
       if status[objid]['found']: # multiple matches
         status[objid]['nodes'].append({"osmid":osmid, "distance":distance})
@@ -326,10 +336,11 @@ def identify(feature):
         link  = elem['tag'].get('source_id',None)
         link2 = elem['tag'].get('no-kartverket-ssr:objid',None)
         date  = elem['tag'].get('no-kartverket-ssr:date',None)
+        # check whether the tag usage is correct and up to date
         if link2 is not None:  
           status[objid]['found']=True
-          if date != UP_DATE:
-            print "...last updated %s" % date
+          if date != ssrdate:
+            print "...outdated data from %s" % date
         else:
           if link is not None:  
             print "...with outdated metadata."
@@ -339,6 +350,7 @@ def identify(feature):
           suggested = (typ, osmid, elem['tag'].get('name',''))
         
     else:
+      # compare the place name to the SSR name using levenshtein distance
       try:
         delta = max( ratio(osmname, sname), ratio(osmname, forname) ) # Levenshtein may not be available
       except:
@@ -346,6 +358,8 @@ def identify(feature):
       if delta > bestratio:
         status[objid]['bestmatch'] = {"osmname":osmname, "osmid":osmid, "levenshtein":delta, "type":parent.tag}
         bestratio = delta
+
+  # unless we have a perfect match...
   if not status[objid]['found']:
     typ = unicode(feature['properties']['enh_navntype'])
     geomtype, osmtype = osmtypes.get(int(typ), ("node","place=locality"))
@@ -372,14 +386,14 @@ def identify(feature):
             "source_ref":"http://data.kartverket.no/stedsnavn/",
       })
 
-      tagdict = dict({ 
+      tagdict = dict({ #these will be created 
             "name":sname,
             #"name:%s" % lang: sname,
             #"official_name":sname,
             "source:name":"Kartverket", 
             "no-kartverket-ssr:objid":unicode(objid),
             "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
-            "no-kartverket-ssr:date":UP_DATE, 
+            "no-kartverket-ssr:date":ssrdate, 
           }, **typetags)
 
 
@@ -426,8 +440,11 @@ def identify(feature):
 
     userin = sys.stdin.readline().strip()
       
+    # exit program
     if userin in ["x", "X"]:
       sys.exit(0)
+
+    # add note
     elif userin in ["n", "N"]:
       NOTE_TEXT = """This place is a named place in the Norwegian place name register SSR.
 This note identifies a possible conflict with existing data. Please compare:
@@ -451,6 +468,8 @@ Author comment: %s"""
         print r
       
       pass
+
+    # update metadata
     elif userin in ["m", "M"]:
       print
       print "enter geometry to edit [format \"node|way|relation 123456]\":"
@@ -526,6 +545,7 @@ Author comment: %s"""
           api.RelationUpdate(rel)
           api.ChangesetClose()
   
+    # add element
     elif userin in ["a", "A"]:
 
       comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
@@ -537,7 +557,6 @@ Author comment: %s"""
       })
 
       print "Creating changeset id #", csid
-
 
       if   geomtype == "area":
         n1   = api.NodeCreate({
@@ -556,8 +575,6 @@ Author comment: %s"""
           "nd":[n1["id"], n2["id"], n3["id"], n1["id"]],
           "tag":dict({"area":"yes"},**tagdict),
         })
-        
-        
       
       elif   geomtype == "way":
         n1   = api.NodeCreate({
@@ -573,7 +590,6 @@ Author comment: %s"""
           "tag":tagdict,
         })
         
-        
       elif geomtype == "node":
         node = api.NodeCreate({
           "lat":"%.6f"%lat,
@@ -585,14 +601,15 @@ Author comment: %s"""
 
       api.ChangesetClose()
 
+# skip to designated feature
 ffwd = 0
 if skipto is not None:
   while features[ffwd]['properties']['enh_snavn'] != skipto:
     ffwd += 1
-
 print "%.2f%% skipped." % (float(ffwd) / len(features) * 100)
 
-map(identify, features[ffwd:]) # 
+# call the identify method on each feature
+map(identify, features[ffwd:]) 
 
 
 
