@@ -47,62 +47,94 @@ api = OsmApi.OsmApi(username=username, password=password, api="api.openstreetmap
 osmtypes    = {
   1:  ("node", "natural=peak"),   # berg - massif?
   2:  ("node", "natural=peak"),   # fjell - massif?
-  3:  ("node", "natural=massif"), # fjellområde
-  4:  ("area", "natural=heath"),  # hei
+  3:  ("node", "natural=massif;place=locality"), # fjellområde
+  4:  ("area", "natural=heath;place=locality"),  # hei
   5:  ("node", "natural=peak"),   # høydee / hill?
   6:  ("node", "natural=peak"),   # kollen - massif?
-  7:  ("node", "natural=ridge"),  # rygg
+  7:  ("node", "natural=ridge;place=locality"),  # rygg
   8:  ("node", "natural=peak"),   # haug - hill?
   9:  ("node", "natural=slope;place=locality"), # bakke 
   10: ("node", "natural=slope;place=locality"), # li 
   11: ("way" , "natural=cliff"),  # stup
-#  12: ("area", "natural=fell"),  # vidde 
-#  13: ("area", "natural=fell"), # slette
-#  14: ("area", "natural=wood"),# mo
+  12: ("area", "natural=fell;place=locality"),  # vidde 
+  13: ("area", "natural=fell;place=locality"), # slette
+  14: ("area", "natural=wood;place=locality"),# mo
   15: ("way" , "natural=valley"), # dalføre (large valley)
   16: ("way" , "natural=valley"), # dal 
   17: ("node", "natural=valley"), # botn - the end of a valley
   18: ("way" , "natural=valley"), # skar - a slight canyon, cut
   19: ("way" , "natural=valley"), # juv - an actual canyon
   20: ("way" , "natural=valley"), # søkk - a less pronounced canyon
-  21: ("node" , "natural=stone"),  # stein, findling
+  21: ("node", "natural=stone;place=locality"),  # stein, findling
+  22: ("node", "natural=overhang;place=locality"),  # heller
   30: ("area", "natural=water;water=lake"),  # innsjoe
   31: ("area", "natural=water;water=lake"),  # vann
   32: ("area", "natural=water;water=lake"),  # tjern
   33: ("way" , "waterway=dam"),   # pytt (tiny dam)
+  34: ("way" , "natural=strait;place=locality"),   # sund 
   35: ("node", "natural=bay"),    # vik
   36: ("way" , "waterway=river"), # elv
   37: ("way" , "waterway=stream"), # bekk
   38: ("way" , "waterway=ditch"), # grøftt - drain?
-  39: ("way" , "waterway=waterfall"), # foss
+  39: ("node", "natural=waterfall"), # foss, according to ongoing discussion
   40: ("way" , "waterway=rapids"),# stryk
+  41: ("node", "natural=estuary;place=locality"),# os
   42: ("area", "natural=water;water=pool"),  # høl, a pool under a waterfall
   43: ("node", "natural=bay"),    # lon - bay in a river
   44: ("area", "place=island"),   # ø
   45: ("area", "place=islet"),    # holme
   46: ("node", "natural=cape"),   # halvoey
-  39: ("node", "natural=waterfall"), # foss, according to ongoing discussion
   47: ("node", "natural=cape"),   # nes
-  80: ("node", "natural=fjord"),  #fjord
-  61: ("node", "place=locality;natural=wetland"),   # myr + wetland=marsh - add as locality for now
-  62: ("node", "place=locality;landuse=farm"),   # utmark - add as locality for now
-  71: ("node", "place=croft"),     # setervoll
-  82: ("node", "natural=strait"), # sund
-  84: ("area", "place=island"),   # øy i sjø 
-  85: ("area", "place=islet"),    # holme i sjø
-  86: ("node", "natural=cape"),   # halvoey, preferred over natural=peninsula
-  83: ("node", "natural=bay"),    # vik i sjø
-  87: ("node", "natural=cape"),   # nes i sjø
-  89: ("node", "natural=beach"),  # strand
-  90: ("area", "natural=skerry"), # skjær
-  92: ("area", "natural=shoal"),  # grunne
+  48: ("node", "natural=cape"),   # eid
+  49: ("node", "natural=beach"),  # strand
+  50: ("area", "natural=glacier"),# isbre
+  51: ("area", "natural=glacier"),# fonn
+  52: ("area", "natural=skerry"), # skjaer
+  53: ("node", "natural=shoal;place=locality"),  # baae
+  54: ("node", "natural=shoal;place=locality"),  # grunne
+  55: ("node", "natural=shoal;place=locality"),  # banke
+  #56: ("node", "place=locality"),  # vanndetalj
+  60: ("node", "natural=wood;place=locality"),   # skog - add as locality for now
+  61: ("node", "natural=wetland;place=locality"),   # myr + wetland=marsh - add as locality for now
+  62: ("node", "landuse=meadow;place=locality"),   # utmark - add as locality for now
+  63: ("node", "natural=fell;place=locality"),   # sva
+  64: ("node", "natural=scree;place=locality"),   # ur
+  #65: ("node", "place=locality"),   # oeyr
+  #66: ("node", "place=locality"),   # sand
+  67: ("node", "landuse=meadow;place=locality"),   # eng
+  68: ("node", "landuse=meadow;place=locality"),   # jorde
+  69: ("node", "landuse=meadow;place=locality"),   # havnehage
+  70: ("node", "landuse=quarry;resource=turf"),    # torvtak
+  71: ("node", "place=croft"),    # setervoll
+  72: ("area", "leisure=park"),   # park
+  80: ("node", "natural=fjord"),  # fjord
+  81: ("node", "natural=water"),  # havomraade
+  82: ("node", "natural=strait;place=locality"), # sund i sjoe
+  83: ("node", "natural=bay"),    # vik i sjoe
+  84: ("area", "place=island"),   # Oey i sjoe
+  85: ("area", "place=islet"),    # holme i sjoe
+  86: ("node", "natural=cape"),   # halvoey i sjoe, preferred over natural=peninsula
+  87: ("node", "natural=cape"),   # nes i sjoe
+  88: ("node", "natural=cape"),   # eid i sjoe
+  89: ("node", "natural=beach"),  # strand i sjoe
+  90: ("area", "natural=skerry"), # skjaer i sjoe
+  91: ("node", "natural=shoal"),  # baae i sjoe
+  92: ("node", "natural=shoal"),  # grunne i sjoe
+  93: ("way",  "natural=trench;place=locality"),  # renne
+#  94: ("node", "place=locality"),  # banke i sjoe
+#  95: ("node", "place=locality"),  # bakke i sjoe
+#  96: ("node", "place=locality"),  # sokk i sjoe
+  97: ("node", "natural=deep;place=locality"),   # dyp
+  98: ("node", "natural=ridge;place=locality"),  # rygg
+  99: ("node", "natural=ridge;place=locality"),  # egg
   100:("node", "place=town"),     # by
   101:("node", "place=village"),  # tettsted
   102:("node", "place=hamlet"),   # tettbebyggelse
-  103:("node", "place=neighbourhood"),     # bygdelag
-  104:("node", "place=farm"),     # grend
-  105:("node", "place=neighbourhood"),     # boligfelt
-  106:("node", "place=neighbourhood"),     # borettslag
+  103:("node", "place=neighbourhood"), # bygdelag
+  104:("node", "place=neighbourhood"), # grend
+  105:("node", "place=neighbourhood"), # boligfelt
+  106:("node", "place=neighbourhood"), # borettslag
+  107:("area", "landuse=industrial;place=neighbourhood"), # industriomraade
   108:("node", "place=farm"),     # bruk
   109:("node", "building=house"), # enebolig
   110:("node", "building=cabin"), # fritidsbolig, area!
@@ -125,6 +157,7 @@ osmtypes    = {
   128:("area", "amenity=sports_centre;building=yes"), # sporthall
   129:("node", "man_made=lighthouse"),   # fyr
   130:("node", "man_made=lighthouse"),   # lykt, man_made=lighthouse may not always be correct
+  131:("node", "man_made=communications_tower"),   # tv/radiomast
   132:("node", "place=district"),        # bydel
   140:("way", "highway=residential"),    # veg
   142:("way", "highway=track"),   # traktorveg
@@ -135,8 +168,9 @@ osmtypes    = {
   155:("node", "man_made=pier"),  # brygge
   161:("node", "railway=station"),# stasjon
   162:("node", "railway=halt"),   # stoppeplass
-  170:("node", "place=locality"), # eiendom
+  #170:("node", "place=locality"), # eiendom
   190:("area", "leisure=sports_centre"),     #idrettsanlegg, may be leisure=pitch
+  191:("area", "leisure=camping"), # campingplass
   194:("way", "piste=downhill"),  #slalombakke
   201:("way", "waterway=dam"),    # dam
   204:("way", "waterway=dam;note=artifical facility used for timber floating"), # floetningsanlegg
@@ -145,17 +179,49 @@ osmtypes    = {
   208:("node", "tourism=attraction;place=locality"), # severdighet
   209:("node", "tourism=viewpoint"), # utsiktspunkt
   211:("node", "natural=peak"),   # topp
+  212:("node", "place=locality"), # hylle - flat area in a mountain slope
   213:("node", "place=locality"), # terrengdetalj
-  216:("relation", "place=island"), # øppe
-  218:("node", "landuse=quarry"), # grustak/steinbrudd
+  215:("node", "natural=bay;place=locality"), # vaag, fjordarm
+  216:("relation", "place=island"), # oeygruppe i sjoe
+  217: ("node", "natural=shoal"),  # klakk (spiss grunne)
+  218:("node", "landuse=mine"),   # bergverk
   221:("area", "landuse=harbour"),# havn
   225:("node", "place=locality"), # annen kulturdetalj
-  244:("node", "place=locality;natural=valley"), # senkning
+  226:("node", "landuse=quarry"), # grustak/steinbrudd
+  227:("node", "landuse=storage;resource=logs;note=toemmervelte;place=locality"), # toemmervelte
+  228:("node", "place=neighbourhood"),  # hyttefelt
+  229:("node", "amenity=kindergarden"), # barnehage
+  230:("node", "amenity=post_office"), # postkontor 
+  #231: ("node", "place=locality"),  # adressenavn
+  237:("node", "amenity=townhall"), # raadhus
+  #238: ("node", "place=locality"),  # elvemel
+  241:("node", "natural=estuary;place=locality"), # fjordmunning
+  239:("node", "natural=slope;place=locality"), # fjellside
+  242:("node", "natural=cape"),   # nes mellom elver
+  243:("node", "natural=water;water=source;place=locality"), # kilde
+  244:("node", "natural=valley;place=locality"), # senkning
+  245:("node", "place=locality"), # skulder, nese, bryn - mountain formations
+  246:("area", "natural=wood"),   # skogomraade
+  #247:("area", "place=locality"), # landskapsomraade
+  248:("area", "building=university"), # universitet
+  249:("area", "building=church;amenity=place_of_worship"), # annen religioes bygning
+  250:("node", "amenity=prison"), # fengsel
   251:("node", "tourism=museum"), # museum/bibliotek/galleri ~ amenity=arts_centre
+  252:("node", "building=garage"), # garasje/hangar
+  255:("node", "natural=water;place=locality"), # sjoestykke
+  #256:("node", "place=locality"), # fiskeplass
+  257:("node", "natural=water;place=locality"), # del av innsjoe
+  259:("node", "building=residential"), # boligblokk
+  260:("node", "natural=cave"),   # grotte
   261:("relation", "natural=water"),  # gruppe av vann
   262:("relation", "natural=water;water=lake"),  # gruppe av tjern
-  267:("node", "amenity=restaurant"),   # serveringssted
+  263: ("node", "natural=scree;place=locality"),   # skred
+  264: ("area", "landuse=landfill"),  # fylleplass
+  265:("relation", "place=islet"),    # holmegruppe i sjoe
+  266:("node", "place=neighbourhood"), # tettstedsdel
+  267:("node", "amenity=restaurant"), # serveringssted
   280:("node", "place=farm"),     # gard
+  314:("node", "natural=crater"), # krater
 }
 
 skrstat = {
