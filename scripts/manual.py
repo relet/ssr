@@ -22,8 +22,11 @@ except:
   pass
 import OsmApi
 
+OFFLINE = True 
+
 #XAPI_URL="http://jxapi.osm.rambler.ru/xapi/api/0.6/*[bbox=%s,%s,%s,%s]"
 XAPI_URL =u"http://www.overpass-api.de/api/xapi?*[bbox=%s,%s,%s,%s]"
+NOMINATIM=u"http://nominatim.openstreetmap.org/search/%s?format=json&countrycodes=no"
 NAME_Q   =u"[name=%s]"
 NOTE_API =u"http://api.openstreetmap.org/api/0.6/notes"
 # parameters = name urlencoded, lon, lat, lon, lat
@@ -88,9 +91,9 @@ osmtypes    = {
   50: ("area", "natural=glacier"),# isbre
   51: ("area", "natural=glacier"),# fonn
   52: ("area", "natural=skerry"), # skjaer
-  53: ("node", "natural=shoal;place=locality"),  # baae
-  54: ("node", "natural=shoal;place=locality"),  # grunne
-  55: ("node", "natural=shoal;place=locality"),  # banke
+  53: ("node", "natural=shoal"),  # baae
+  54: ("node", "natural=shoal"),  # grunne
+  55: ("node", "natural=shoal"),  # banke
   #56: ("node", "place=locality"),  # vanndetalj
   60: ("node", "natural=wood;place=locality"),   # skog - add as locality for now
   61: ("node", "natural=wetland;place=locality"),   # myr + wetland=marsh - add as locality for now
@@ -261,6 +264,14 @@ features = data['features']
 
 status = {} # dict:ssrid->{found, ...}
 
+try:
+  fd = open("stored.json","r")
+  stored = json.loads(fd.read())
+  fd.close()
+except:
+  print "no stored actions loaded."
+  stored = []
+
 # the method that handles each feature
 def identify(feature):
   lon, lat = map(float,feature['geometry']['coordinates'])
@@ -367,6 +378,7 @@ def identify(feature):
 
     bestmatch  =  str(status[objid].get('bestmatch',"None"))
     exactmatch = None
+    nominatim  = None
  
     if osmtype:
       typekeys = osmtype.split(";")
@@ -376,9 +388,9 @@ def identify(feature):
         typetags[k]=v      
 
       rmdict = dict({ # these will be removed (and replaced) if encountered
-            "official_name":sname,
+            #"official_name":sname,
             "name:%s" % lang: sname, #not required if identical with sname!
-            #"source":"Kartverket", # source:name is preferred, but it may be the source of the location as well
+            "source":"Kartverket", # source:name is preferred, but it may be the source of the location as well
             "source_id":unicode(ssrid), #using ssr namespace and objid instead
             "source_ref":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
             # more broken tags by grekvard_import
@@ -389,8 +401,8 @@ def identify(feature):
       tagdict = dict({ #these will be created 
             "name":sname,
             #"name:%s" % lang: sname,
-            #"official_name":sname,
-            "source:name":"Kartverket", 
+            "official_name":sname,
+            "source:name":"Kartverket, Sentralt Stadnamnregister", 
             "no-kartverket-ssr:objid":unicode(objid),
             "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid,
             "no-kartverket-ssr:date":ssrdate, 
@@ -405,14 +417,19 @@ def identify(feature):
           mainkey, mainval = osmtype.split(";")[0].split("=")
           if match['data']['tag'].get(mainkey,'---') == mainval:
             exactmatch = "%s %s %s=%s" % (match['type'], match['data']['id'], mainkey, mainval)
-             
-
+      
+      #query nominatim      
+      r = requests.get(NOMINATIM % sname)
+      nominatim = json.loads(r.content)
 
     print "------------------------------------------------------------------------------"
     print "Not found:", sname
     if not suggested:
-      print "  Best match:",     bestmatch
-      print "  Location match:", exactmatch
+      print "  Best match     :",     bestmatch
+      print "  Location match :", exactmatch
+    if len(nominatim) > 0:
+      for n in nominatim:
+        print "  Nominatim match: %s %s %s=%s %s" % (n['osm_type'], n['osm_id'], n['class'], n['type'], n['display_name'])
     print "It's a ", navntype.get(typ, typ), "(number ",typ,")"
     print skrstat[feature['properties']['skr_snskrstat']], tystat [feature['properties']['enh_sntystat']]
     print
@@ -440,6 +457,10 @@ def identify(feature):
 
     userin = sys.stdin.readline().strip()
       
+    # whatever happens - save progress
+    fd = open("stored.json","w")
+    fd.write(json.dumps(stored))
+    fd.close()
     # exit program
     if userin in ["x", "X"]:
       sys.exit(0)
@@ -464,8 +485,13 @@ Author comment: %s"""
 
       if confirm == "Y":
         params = {"lat":lat, "lon":lon, "text":note}
-        r = requests.post(NOTE_API, auth=(username, password), params=params)
-        print r
+
+        if OFFLINE:
+          stored.append(("note",params))
+          print "stored for later"
+        else:
+          r = requests.post(NOTE_API, auth=(username, password), params=params)
+          print r
       
       pass
 
@@ -483,14 +509,14 @@ Author comment: %s"""
         typ, id = userin.split(" ")
 
       if typ == "node":      
-        node = api.NodeGet(id)
-        tags = node['tag']
+        elem = api.NodeGet(id)
+        tags = elem['tag']
       elif typ == "way":
-        way = api.WayGet(id)
-        tags = way['tag']
+        elem = api.WayGet(id)
+        tags = elem['tag']
       elif typ == "relation":
-        rel = api.RelationGet(id)
-        tags = rel['tag']
+        elem = api.RelationGet(id)
+        tags = elem['tag']
 
       print "BEFORE:"
       for tag in tags.keys():
@@ -522,84 +548,91 @@ Author comment: %s"""
 
       if userin == "Y":
         comment = "Updating single element with metadata from the central place name register of Norway (SSR): %s" % sname
-        csid    = api.ChangesetCreate({
+        csdict = {
            "comment":comment,
-           "source:name":"Kartverket",
+           "source:name":"Kartverket, Sentralt Stadnamnregister", 
            "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
            "created_by":"ssr-api alpha",
-        })
+        }
+        if OFFLINE:
+          stored.append(("update", csdict, elem, tags))
+          print "stored for later"
+        else:
+          csid    = api.ChangesetCreate(csdict)
 
-        if typ == "node":
-          node['tag'] = tags
-          node['changeset'] = csid
-          api.NodeUpdate(node)
-          api.ChangesetClose()
-        elif typ == "way":
-          way['tag'] = tags
-          way['changeset'] = csid
-          api.WayUpdate(way)
-          api.ChangesetClose()
-        elif typ == "relation":
-          rel['tag'] = tags
-          rel['changeset'] = csid
-          api.RelationUpdate(rel)
+          if typ == "node":
+            elem['tag'] = tags
+            elem['changeset'] = csid
+            api.NodeUpdate(elem)
+          elif typ == "way":
+            elem['tag'] = tags
+            elem['changeset'] = csid
+            api.WayUpdate(elem)
+          elif typ == "relation":
+            elem['tag'] = tags
+            elem['changeset'] = csid
+            api.RelationUpdate(elem)
           api.ChangesetClose()
   
     # add element
     elif userin in ["a", "A"]:
 
       comment = "Adding single element from the central place name register of Norway (SSR): %s" % sname
-      csid    = api.ChangesetCreate({
+      csdict  = {
           "comment":comment,
           "source:name":"Kartverket",
           "no-kartverket-ssr:url":"http://faktaark.statkart.no/SSRFakta/faktaarkfraobjektid?enhet=%s" % ssrid, 
           "created_by":"ssr-api alpha",
-      })
+      }
+      if OFFLINE:
+        stored.append(("add",csdict,tagdict))
+        print "stored for later"
+      else:
+        csid    = api.ChangesetCreate(csdict)
 
-      print "Creating changeset id #", csid
-
-      if   geomtype == "area":
-        n1   = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%(lon-PDIST),
-        })
-        n2   = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%(lon+PDIST),
-        })
-        n3   = api.NodeCreate({
-          "lat":"%.6f"%(lat-PDIST),
-          "lon":"%.6f"%(lon),
-        })
-        way = api.WayCreate({
-          "nd":[n1["id"], n2["id"], n3["id"], n1["id"]],
-          "tag":dict({"area":"yes"},**tagdict),
-        })
+        print "Creating changeset id #", csid
+        if   geomtype == "area":
+          n1   = api.NodeCreate({
+            "lat":"%.6f"%lat,
+            "lon":"%.6f"%(lon-PDIST),
+          })
+          n2   = api.NodeCreate({
+            "lat":"%.6f"%lat,
+            "lon":"%.6f"%(lon+PDIST),
+          })
+          n3   = api.NodeCreate({
+            "lat":"%.6f"%(lat-PDIST),
+            "lon":"%.6f"%(lon),
+          })
+          way = api.WayCreate({
+            "nd":[n1["id"], n2["id"], n3["id"], n1["id"]],
+            "tag":dict({"area":"yes"},**tagdict),
+          })
       
-      elif   geomtype == "way":
-        n1   = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%(lon-PDIST),
-        })
-        n2   = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%(lon+PDIST),
-        })
-        way = api.WayCreate({
-          "nd":[n1["id"], n2["id"]],
-          "tag":tagdict,
-        })
-        
-      elif geomtype == "node":
-        node = api.NodeCreate({
-          "lat":"%.6f"%lat,
-          "lon":"%.6f"%lon,
-          "tag":tagdict,
-        })
+        elif   geomtype == "way":
+          n1   = api.NodeCreate({
+            "lat":"%.6f"%lat,
+            "lon":"%.6f"%(lon-PDIST),
+          })
+          n2   = api.NodeCreate({
+            "lat":"%.6f"%lat,
+            "lon":"%.6f"%(lon+PDIST),
+          })
+          way = api.WayCreate({
+            "nd":[n1["id"], n2["id"]],
+            "tag":tagdict,
+          })
+          
+        elif geomtype == "node":
+          node = api.NodeCreate({
+            "lat":"%.6f"%lat,
+            "lon":"%.6f"%lon,
+            "tag":tagdict,
+          })
 
         print "Created element", NODE_URL % node["id"]
 
-      api.ChangesetClose()
+        api.ChangesetClose()
 
 # skip to designated feature
 ffwd = 0
